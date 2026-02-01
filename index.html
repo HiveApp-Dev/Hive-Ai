@@ -482,6 +482,14 @@
             letter-spacing: -0.02em;
         }
 
+        .odds-value.high-prob {
+            color: var(--success);
+        }
+
+        .odds-value.low-prob {
+            color: var(--text-secondary);
+        }
+
         .odds-team {
             font-size: 11px;
             color: var(--text-primary);
@@ -1714,6 +1722,19 @@
             return names[sportKey] || sportKey;
         }
 
+        // ==================== ODDS CONVERSION FUNCTIONS ====================
+
+        // Convert moneyline odds to implied win probability percentage
+        function moneylineToPercent(odds) {
+            if (odds > 0) {
+                // Positive odds (underdog): probability = 100 / (odds + 100)
+                return (100 / (odds + 100)) * 100;
+            } else {
+                // Negative odds (favorite): probability = |odds| / (|odds| + 100)
+                return (Math.abs(odds) / (Math.abs(odds) + 100)) * 100;
+            }
+        }
+
         // ==================== DATA PROCESSING FUNCTIONS ====================
 
         async function fetchOdds(sport) {
@@ -1753,18 +1774,12 @@
 
                     outcomes.forEach(function(outcome) {
                         const odds = outcome.price;
-                        let probability;
-
-                        if (odds > 0) {
-                            probability = 100 / (odds + 100);
-                        } else {
-                            probability = Math.abs(odds) / (Math.abs(odds) + 100);
-                        }
+                        const probability = moneylineToPercent(odds);
 
                         if (outcome.name === game.home_team) {
-                            homeWinProbability = probability * 100;
+                            homeWinProbability = probability;
                         } else {
-                            awayWinProbability = probability * 100;
+                            awayWinProbability = probability;
                         }
 
                         avgOdds += Math.abs(odds);
@@ -1995,11 +2010,20 @@
                     const bookmaker = game.bookmakers[0];
                     const h2hMarket = bookmaker.markets.find(function(m) { return m.key === 'h2h'; });
                     if (h2hMarket) {
+                        // Find the higher probability to determine favorite
+                        let maxProb = 0;
                         h2hMarket.outcomes.forEach(function(outcome) {
-                            const odds = outcome.price > 0 ? '+' + outcome.price : outcome.price;
+                            const prob = moneylineToPercent(outcome.price);
+                            if (prob > maxProb) maxProb = prob;
+                        });
+
+                        h2hMarket.outcomes.forEach(function(outcome) {
+                            const winPercent = moneylineToPercent(outcome.price);
+                            const isHighProb = winPercent >= 50;
+                            const probClass = isHighProb ? 'high-prob' : 'low-prob';
                             html += '<div class="odds-item">' +
-                                '<div class="odds-label">ML</div>' +
-                                '<div class="odds-value">' + odds + '</div>' +
+                                '<div class="odds-label">Win %</div>' +
+                                '<div class="odds-value ' + probClass + '">' + Math.round(winPercent) + '%</div>' +
                                 '<div class="odds-team">' + outcome.name + '</div>' +
                             '</div>';
                         });
