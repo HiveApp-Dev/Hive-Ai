@@ -2,24 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- iOS/Android Theme Colors -->
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Hive AI">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <title>Hive AI - Sports Odds Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg-primary: #000000;
-            --bg-glass: rgba(255, 255, 255, 0.03);
-            --bg-glass-hover: rgba(255, 255, 255, 0.06);
+            --bg-glass: rgba(20, 20, 20, 0.95);
+            --bg-glass-hover: rgba(30, 30, 30, 0.98);
             --glass-border: rgba(255, 255, 255, 0.08);
             --glass-border-light: rgba(255, 255, 255, 0.12);
             --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.5);
-            --accent: #f59e0b;
-            --accent-glow: rgba(245, 158, 11, 0.4);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.3);
             --accent-red: #ef4444;
             --error: #ef4444;
             --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
         }
 
         * {
@@ -33,6 +43,7 @@
             -webkit-text-size-adjust: 100%;
             -ms-text-size-adjust: 100%;
             text-size-adjust: 100%;
+            background: var(--bg-primary);
         }
 
         body {
@@ -40,12 +51,26 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             touch-action: manipulation;
+        }
+
+        /* iOS Safe Areas */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            
+            .input-area {
+                padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            }
         }
 
         /* Ambient Background */
@@ -58,29 +83,30 @@
             pointer-events: none;
             z-index: 0;
             overflow: hidden;
+            background: var(--bg-primary);
         }
 
         .ambient-orb {
             position: absolute;
             border-radius: 50%;
             filter: blur(120px);
-            opacity: 0.15;
+            opacity: 0.05;
         }
 
         .orb-1 {
-            width: 600px;
-            height: 600px;
+            width: 400px;
+            height: 400px;
             background: var(--accent);
-            top: -200px;
-            right: -200px;
+            top: -100px;
+            right: -100px;
         }
 
         .orb-2 {
-            width: 400px;
-            height: 400px;
-            background: var(--accent-red);
-            bottom: -100px;
-            left: -100px;
+            width: 300px;
+            height: 300px;
+            background: var(--success);
+            bottom: -50px;
+            left: -50px;
         }
 
         /* Header */
@@ -90,6 +116,7 @@
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--glass-border);
             padding: 16px 24px;
+            padding-top: max(16px, env(safe-area-inset-top));
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -137,10 +164,10 @@
             gap: 6px;
             font-size: 12px;
             color: var(--accent);
-            background: rgba(245, 158, 11, 0.1);
+            background: rgba(59, 130, 246, 0.1);
             padding: 6px 12px;
             border-radius: 20px;
-            border: 1px solid rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
 
         .status-dot {
@@ -221,7 +248,7 @@
         }
 
         .message.user .message-avatar {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(239, 68, 68, 0.3));
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(16, 185, 129, 0.3));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -273,6 +300,103 @@
             margin-top: 6px;
             text-align: right;
         }
+
+        /* Ranking Tables */
+        .ranking-table {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            margin: 14px 0;
+            overflow: hidden;
+        }
+
+        .ranking-header {
+            display: grid;
+            grid-template-columns: 40px 1fr 80px 80px;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .ranking-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 80px 80px;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+        }
+
+        .ranking-row:last-child {
+            border-bottom: none;
+        }
+
+        .ranking-row:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .rank-number {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+        }
+
+        .rank-team {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .team-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .team-matchup {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .win-percentage {
+            text-align: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .best-bet {
+            text-align: center;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* Win Probability Bars */
+        .probability-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .probability-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .high-probability { background: linear-gradient(90deg, var(--success), #34d399); }
+        .medium-probability { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+        .low-probability { background: linear-gradient(90deg, var(--accent-red), #f87171); }
 
         /* Odds Card - Glass Style */
         .odds-card {
@@ -339,8 +463,8 @@
         }
 
         .odds-item:hover {
-            background: rgba(245, 158, 11, 0.05);
-            border-color: rgba(245, 158, 11, 0.2);
+            background: rgba(59, 130, 246, 0.05);
+            border-color: rgba(59, 130, 246, 0.2);
         }
 
         .odds-label {
@@ -423,8 +547,8 @@
         }
 
         .input-container:focus-within {
-            border-color: rgba(245, 158, 11, 0.3);
-            box-shadow: 0 0 30px rgba(245, 158, 11, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
         }
 
         .input-container textarea {
@@ -433,7 +557,7 @@
             border: none;
             outline: none;
             color: var(--text-primary);
-            font-size: 15px;
+            font-size: 16px;
             font-family: inherit;
             resize: none;
             max-height: 120px;
@@ -451,8 +575,8 @@
             height: 40px;
             border-radius: 12px;
             border: none;
-            background: linear-gradient(135deg, var(--accent), #ea580c);
-            color: #000;
+            background: linear-gradient(135deg, var(--accent), #2563eb);
+            color: white;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -500,6 +624,19 @@
             gap: 10px;
         }
 
+        /* Info Message */
+        .info-message {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 14px;
+            color: var(--info);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         /* Empty State */
         .empty-state {
             display: flex;
@@ -535,24 +672,25 @@
 
         /* Responsive */
         @media (max-width: 600px) {
-            .header { padding: 12px 16px; }
+            .header { padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
             .header-avatar { width: 36px; height: 36px; }
             .header-status { display: none; }
             .messages-wrapper { padding: 0 16px; }
-            .input-area { padding: 16px; }
+            .input-area { padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
             .message { gap: 10px; }
             .message-avatar { width: 32px; height: 32px; border-radius: 50%; }
             .odds-grid { grid-template-columns: repeat(2, 1fr); }
             .input-container { padding: 10px 14px; }
             .send-btn { width: 36px; height: 36px; }
+            .ranking-header, .ranking-row {
+                grid-template-columns: 30px 1fr 70px 70px;
+                padding: 10px 14px;
+                font-size: 10px;
+            }
         }
 
         /* Mobile-specific fixes */
         @media (max-width: 480px) {
-            textarea, input, select {
-                font-size: 16px !important; /* Prevents iOS zoom */
-            }
-            
             .input-container textarea {
                 font-size: 16px;
             }
@@ -564,11 +702,6 @@
                 font-size: 16px;
                 line-height: 1.4;
             }
-        }
-
-        /* Hide suggestions */
-        .suggestions {
-            display: none;
         }
     </style>
 </head>
@@ -585,12 +718,12 @@
             </a>
             <div class="header-info">
                 <h1>Hive AI</h1>
-                <span>Sports Odds Assistant</span>
+                <span id="botIntelligence">Learning your style...</span>
             </div>
         </div>
         <div class="header-status">
             <span class="status-dot"></span>
-            Live Odds
+            Smart Odds
         </div>
     </header>
 
@@ -600,7 +733,7 @@
                 <a href="https://t.me/Moneylinebott" target="_blank" rel="noopener noreferrer">
                     <img src="https://pfst.cf2.poecdn.net/base/image/5c23342b1b649614b7519f7acbcab5f36510998541d798918faca857e7d0eabc?w=814&h=768" alt="Bot">
                 </a>
-                <p>Ask me about sports odds</p>
+                <p>Ask me about sports odds, rankings, and predictions</p>
             </div>
         </div>
     </div>
@@ -610,7 +743,7 @@
             <div class="input-container">
                 <textarea
                     id="messageInput"
-                    placeholder="Ask about NFL, NBA, MLB odds..."
+                    placeholder="Ask: 'Rank tomorrow's NBA games by win %' or 'Show NFL predictions'"
                     rows="1"
                     onkeydown="handleKeyDown(event)"
                     oninput="autoResize(this)"
@@ -625,7 +758,7 @@
     <script>
         // ==================== ENHANCED CORE SYSTEM ====================
         
-        // Multiple API Keys with Fallback
+        // Multiple API Keys with Fallback (silent switching)
         const API_KEYS = {
             primary: '47c05ed65257b06a22df0ef01fc72e66',
             backup: '6bac22532f0b5a35e27fbce8bef399d0'
@@ -634,29 +767,42 @@
         const API_BASE = 'https://api.the-odds-api.com/v4';
         const BOT_IMAGE = 'https://pfst.cf2.poecdn.net/base/image/5c23342b1b649614b7519f7acbcab5f36510998541d798918faca857e7d0eabc?w=814&h=768';
         
-        // Storage Keys for LocalStorage
-        const STORAGE_KEYS = {
-            CONVERSATIONS: 'hive_conversations',
-            MEMORY: 'hive_memory',
-            CURRENT: 'hive_current'
-        };
+        // ONLY ONE STORAGE KEY FOR INTELLIGENCE - NO CHAT HISTORY
+        const STORAGE_KEY = 'hive_ai_intelligence';
 
-        // Sports Mapping
+        // Enhanced Sports Mapping
         const SPORTS_MAP = {
-            'nfl': 'americanfootball_nfl',
-            'football': 'americanfootball_nfl',
             'nba': 'basketball_nba',
             'basketball': 'basketball_nba',
+            'nba basketball': 'basketball_nba',
+            'nba games': 'basketball_nba',
+            'basketball games': 'basketball_nba',
+            
+            'nfl': 'americanfootball_nfl',
+            'football': 'americanfootball_nfl',
+            'nfl football': 'americanfootball_nfl',
+            'nfl games': 'americanfootball_nfl',
+            'football games': 'americanfootball_nfl',
+            
             'mlb': 'baseball_mlb',
             'baseball': 'baseball_mlb',
+            'mlb baseball': 'baseball_mlb',
+            'mlb games': 'baseball_mlb',
+            'baseball games': 'baseball_mlb',
+            
             'nhl': 'icehockey_nhl',
             'hockey': 'icehockey_nhl',
+            'nhl hockey': 'icehockey_nhl',
+            
+            'ufc': 'mma_mixed_martial_arts',
+            'mma': 'mma_mixed_martial_arts',
+            'fighting': 'mma_mixed_martial_arts',
+            
             'soccer': 'soccer_usa_mls',
             'mls': 'soccer_usa_mls',
             'premier league': 'soccer_epl',
             'epl': 'soccer_epl',
-            'ufc': 'mma_mixed_martial_arts',
-            'mma': 'mma_mixed_martial_arts',
+            
             'ncaaf': 'americanfootball_ncaaf',
             'college football': 'americanfootball_ncaaf',
             'ncaab': 'basketball_ncaab',
@@ -675,75 +821,181 @@
             'mma_mixed_martial_arts': 'hand-fist'
         };
 
-        // Memory System
-        let memory = {
-            favoriteSports: {},
-            lastSport: null,
-            totalQueries: 0,
-            userPreferences: {}
+        // Query Patterns for understanding complex requests
+        const QUERY_PATTERNS = {
+            RANK_BY_WIN_PERCENT: /(rank|sort|order|list|show).*(by|according to|based on).*(win|probability|chance|%)/i,
+            RANK_BY_ODDS: /(rank|sort|order|list).*(by|according to|based on).*(odds|line|spread|moneyline)/i,
+            TOP_GAMES: /(top|best|highest|most likely).*(games|matches|odds)/i,
+            TOMORROW_GAMES: /(tomorrow|tomorrow's|next day).*(games|matches|odds)/i,
+            TODAY_GAMES: /(today|today's|tonight|tonight's).*(games|matches|odds)/i,
+            WIN_PREDICTIONS: /(predict|prediction|forecast|who will win).*/i,
+            VALUE_BETS: /(value|best bet|smart bet|good odds).*/i,
+            COMPARE_TEAMS: /(compare|versus|vs|matchup|head to head).*/i,
+            UNDERDOGS: /(underdog|upset|longshot).*/i,
+            FAVORITES: /(favorite|favourite|likely to win|expected to win).*/i
         };
 
-        let currentConversation = {
-            id: Date.now().toString(),
+        // ==================== ADVANCED INTELLIGENCE SYSTEM ====================
+        
+        // AI Personality and Learning System
+        let aiIntelligence = {
+            // User Profile
+            userProfile: {
+                interactionCount: 0,
+                firstInteractionDate: null,
+                lastInteractionDate: null,
+                sessionCount: 0,
+                avgQueriesPerSession: 0
+            },
+            
+            // Sports Preferences (learns over time)
+            sportsPreferences: {
+                mostAskedSport: null,
+                sportFrequency: {},
+                favoriteTeams: {},
+                bettingStyle: null, // 'analytical', 'quick', 'detailed', 'casual'
+                timeOfDayPatterns: {}
+            },
+            
+            // Conversation Style (adapts to user)
+            conversationStyle: {
+                userFormality: 'neutral', // 'casual', 'neutral', 'formal'
+                userDetailPreference: 'balanced', // 'brief', 'balanced', 'detailed'
+                usesEmojis: false,
+                responseLength: 'medium',
+                preferredGreetings: [],
+                preferredFarewells: []
+            },
+            
+            // Query Patterns (learns what user asks)
+            queryPatterns: {
+                commonQueryTypes: {}, // 'rank', 'predict', 'compare', etc.
+                timeBasedQueries: {}, // morning, afternoon, evening patterns
+                complexityLevel: 'medium', // 'simple', 'medium', 'complex'
+                followUpRate: 0
+            },
+            
+            // Learning Metrics
+            learningMetrics: {
+                totalLearningScore: 0,
+                accuracyImprovement: 0,
+                personalizationLevel: 0,
+                lastLearningUpdate: null
+            },
+            
+            // Response Generation (improves over time)
+            responseGeneration: {
+                vocabularyRichness: 1.0,
+                responseVariety: ['standard'],
+                contextualMemory: [],
+                personalizedPhrases: [],
+                adaptiveGreetings: []
+            }
+        };
+
+        // Current session only - cleared on refresh
+        let currentSession = {
             messages: [],
-            createdAt: new Date().toISOString()
+            startTime: new Date().toISOString(),
+            queryCount: 0
         };
 
-        let allConversations = [];
         let isProcessing = false;
         let currentApi = 'primary';
+        let apiFallbackUsed = false;
 
         // ==================== INITIALIZATION ====================
 
         function initialize() {
-            loadFromStorage();
+            // Load AI intelligence from localStorage
+            loadIntelligence();
+            
+            // Update session count
+            aiIntelligence.userProfile.sessionCount++;
+            aiIntelligence.userProfile.lastInteractionDate = new Date().toISOString();
+            
+            if (!aiIntelligence.userProfile.firstInteractionDate) {
+                aiIntelligence.userProfile.firstInteractionDate = new Date().toISOString();
+            }
+            
+            // Update bot intelligence display
+            updateIntelligenceDisplay();
+            
+            // Focus input
             document.getElementById('messageInput').focus();
             
-            // Show welcome if first time
-            if (memory.totalQueries === 0) {
-                setTimeout(() => {
-                    addMessage("Hi! I'm Hive AI. Ask me about NFL, NBA, MLB, NHL, UFC, or any sports odds!", false);
-                }, 500);
-            }
+            // Show personalized welcome based on learning
+            setTimeout(() => {
+                showPersonalizedWelcome();
+            }, 500);
+            
+            // Save intelligence
+            saveIntelligence();
         }
 
-        function loadFromStorage() {
+        function loadIntelligence() {
             try {
-                // Load conversations
-                const savedConvs = localStorage.getItem(STORAGE_KEYS.CONVERSATIONS);
-                if (savedConvs) allConversations = JSON.parse(savedConvs);
-                
-                // Load memory
-                const savedMemory = localStorage.getItem(STORAGE_KEYS.MEMORY);
-                if (savedMemory) memory = JSON.parse(savedMemory);
-                
-                // Load current conversation
-                const current = localStorage.getItem(STORAGE_KEYS.CURRENT);
-                if (current) {
-                    currentConversation = JSON.parse(current);
-                    if (currentConversation.messages.length > 0) {
-                        renderMessages(currentConversation.messages);
-                    }
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    aiIntelligence = JSON.parse(saved);
+                    console.log('Loaded AI intelligence:', aiIntelligence.userProfile.interactionCount, 'interactions');
                 }
             } catch (error) {
-                console.log('Starting fresh');
+                console.log('Starting with fresh AI intelligence');
             }
         }
 
-        function saveToStorage() {
+        function saveIntelligence() {
             try {
-                localStorage.setItem(STORAGE_KEYS.CONVERSATIONS, JSON.stringify(allConversations));
-                localStorage.setItem(STORAGE_KEYS.MEMORY, JSON.stringify(memory));
-                localStorage.setItem(STORAGE_KEYS.CURRENT, JSON.stringify(currentConversation));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(aiIntelligence));
             } catch (error) {
-                console.error('Save error:', error);
+                console.error('Save intelligence error:', error);
+            }
+        }
+
+        function updateIntelligenceDisplay() {
+            const intelligenceSpan = document.getElementById('botIntelligence');
+            if (!intelligenceSpan) return;
+            
+            const interactions = aiIntelligence.userProfile.interactionCount;
+            let level = 'New';
+            
+            if (interactions > 50) level = 'Expert';
+            else if (interactions > 20) level = 'Advanced';
+            else if (interactions > 5) level = 'Learning';
+            
+            intelligenceSpan.textContent = `${level} • ${interactions} interactions`;
+        }
+
+        function showPersonalizedWelcome() {
+            if (document.getElementById('emptyState').style.display !== 'none') {
+                const interactions = aiIntelligence.userProfile.interactionCount;
+                let welcomeMessage = "";
+                
+                if (interactions === 0) {
+                    welcomeMessage = "Hi! I'm Hive AI. I learn from our conversations to give you better sports analysis. Try asking: 'Rank tomorrow's NBA games by win %'";
+                } else if (interactions < 5) {
+                    welcomeMessage = "Welcome back! I'm starting to learn your preferences. What sport shall we analyze today?";
+                } else {
+                    const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
+                    const sportName = favSport ? getSportName(favSport) : "sports";
+                    
+                    const greetings = [
+                        `Good to see you again! Ready to analyze some ${sportName}?`,
+                        `Welcome back! I've learned from our ${interactions} previous conversations.`,
+                        `Hey! Based on our history, I know you like ${sportName}. What shall we analyze today?`
+                    ];
+                    
+                    welcomeMessage = greetings[Math.floor(Math.random() * greetings.length)];
+                }
+                
+                addMessage(welcomeMessage, false);
             }
         }
 
         // ==================== UI FUNCTIONS ====================
 
         function autoResize(textarea) {
-            // Prevent iOS zoom
             if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                 textarea.style.fontSize = '16px';
             }
@@ -751,7 +1003,6 @@
             textarea.style.height = 'auto';
             textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
             
-            // Scroll to bottom if needed
             setTimeout(scrollToBottom, 100);
         }
 
@@ -793,54 +1044,17 @@
             wrapper.appendChild(messageDiv);
             scrollToBottom();
 
-            // Save to conversation
-            currentConversation.messages.push({
+            // Add to current session only (cleared on refresh)
+            currentSession.messages.push({
                 content,
                 isUser,
                 isHtml,
                 timestamp: time.toISOString()
             });
 
-            saveToStorage();
+            currentSession.queryCount++;
 
             return messageDiv;
-        }
-
-        function renderMessages(messages) {
-            const wrapper = document.getElementById('messagesWrapper');
-            wrapper.innerHTML = '';
-            
-            if (messages.length === 0) {
-                document.getElementById('emptyState').style.display = 'flex';
-                return;
-            }
-
-            hideEmpty();
-            messages.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${msg.isUser ? 'user' : 'bot'}`;
-
-                const avatarContent = msg.isUser
-                    ? '<i class="fas fa-user"></i>'
-                    : `<img src="${BOT_IMAGE}" alt="Bot">`;
-
-                const time = new Date(msg.timestamp);
-                const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-                messageDiv.innerHTML = `
-                    <div class="message-avatar">${avatarContent}</div>
-                    <div class="message-bubble">
-                        <div class="message-content">
-                            ${msg.isHtml ? msg.content : `<p>${escapeHtml(msg.content)}</p>`}
-                        </div>
-                        <div class="message-time">${timeStr}</div>
-                    </div>
-                `;
-
-                wrapper.appendChild(messageDiv);
-            });
-            
-            scrollToBottom();
         }
 
         function addTypingIndicator() {
@@ -879,7 +1093,7 @@
             return div.innerHTML;
         }
 
-        // ==================== MESSAGE PROCESSING ====================
+        // ==================== ENHANCED MESSAGE PROCESSING WITH AI LEARNING ====================
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
@@ -896,26 +1110,24 @@
             input.value = '';
             input.style.height = 'auto';
             
-            // Reset focus but prevent zoom
             setTimeout(() => {
                 input.focus();
             }, 50);
 
-            // Update memory
-            memory.totalQueries++;
+            // LEARN FROM THIS INTERACTION
+            learnFromUserMessage(message);
             
             // Add typing indicator
             addTypingIndicator();
 
             try {
-                const response = await processMessage(message);
+                const response = await processMessageWithIntelligence(message);
                 removeTypingIndicator();
                 addMessage(response.text, false, response.isHtml);
                 
-                // Save conversation if it has enough messages
-                if (currentConversation.messages.length >= 4) {
-                    saveConversation();
-                }
+                // LEARN FROM BOT'S RESPONSE
+                learnFromBotResponse(response);
+                
             } catch (error) {
                 removeTypingIndicator();
                 addMessage(`<div class="error-message"><i class="fas fa-exclamation-circle"></i> ${error.message}</div>`, false, true);
@@ -923,142 +1135,824 @@
 
             isProcessing = false;
             sendBtn.disabled = false;
+            
+            // Update intelligence display
+            updateIntelligenceDisplay();
         }
 
-        async function processMessage(message) {
-            const lowerMsg = message.toLowerCase();
+        function learnFromUserMessage(message) {
+            // Update interaction counts
+            aiIntelligence.userProfile.interactionCount++;
+            currentSession.queryCount++;
             
-            // Update memory with sport detection
-            updateMemory(lowerMsg);
-
-            // Greetings
-            if (/^(hi|hello|hey|howdy)/i.test(lowerMsg)) {
-                const greetings = [
-                    "Hey! What sport are you interested in?",
-                    "Hello! Ask me about any sport odds.",
-                    "Hi there! Ready to check some lines?"
-                ];
-                return { text: greetings[Math.floor(Math.random() * greetings.length)], isHtml: false };
-            }
-
-            // Thanks
-            if (/(thank|thanks|thx)/i.test(lowerMsg)) {
-                return { text: "You're welcome! Let me know if you need more odds.", isHtml: false };
-            }
-
-            // Help
-            if (/(help|what can you do)/i.test(lowerMsg)) {
-                return { text: "I provide live odds for NFL, NBA, MLB, NHL, UFC, Soccer, and more. Try asking 'NBA odds' or 'Show me NFL lines'", isHtml: false };
-            }
-
-            // Detect sport
-            let detectedSport = null;
+            const lowerMsg = message.toLowerCase();
+            const hour = new Date().getHours();
+            const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+            
+            // Learn sports preferences
             for (const [keyword, sportKey] of Object.entries(SPORTS_MAP)) {
                 if (lowerMsg.includes(keyword)) {
-                    detectedSport = sportKey;
-                    memory.lastSport = sportKey;
-                    memory.favoriteSports[sportKey] = (memory.favoriteSports[sportKey] || 0) + 1;
-                    break;
+                    aiIntelligence.sportsPreferences.sportFrequency[sportKey] = 
+                        (aiIntelligence.sportsPreferences.sportFrequency[sportKey] || 0) + 1;
+                    
+                    // Update most asked sport
+                    const currentMax = aiIntelligence.sportsPreferences.mostAskedSport;
+                    const currentCount = currentMax ? aiIntelligence.sportsPreferences.sportFrequency[currentMax] || 0 : 0;
+                    
+                    if (aiIntelligence.sportsPreferences.sportFrequency[sportKey] > currentCount) {
+                        aiIntelligence.sportsPreferences.mostAskedSport = sportKey;
+                    }
                 }
             }
+            
+            // Learn query patterns
+            const queryType = analyzeQueryType(message);
+            queryType.forEach(type => {
+                aiIntelligence.queryPatterns.commonQueryTypes[type] = 
+                    (aiIntelligence.queryPatterns.commonQueryTypes[type] || 0) + 1;
+            });
+            
+            // Learn time patterns
+            aiIntelligence.sportsPreferences.timeOfDayPatterns[timeOfDay] = 
+                (aiIntelligence.sportsPreferences.timeOfDayPatterns[timeOfDay] || 0) + 1;
+            
+            // Learn conversation style
+            if (/(hi|hello|hey|good morning|good afternoon|good evening)/i.test(message)) {
+                if (!aiIntelligence.conversationStyle.preferredGreetings.includes(message.toLowerCase())) {
+                    aiIntelligence.conversationStyle.preferredGreetings.push(message.toLowerCase());
+                }
+            }
+            
+            // Detect formality
+            if (message.length < 10 && /^(hi|hey|sup|yo)/i.test(message)) {
+                aiIntelligence.conversationStyle.userFormality = 'casual';
+            } else if (/(please|thank you|kindly|appreciate)/i.test(message)) {
+                aiIntelligence.conversationStyle.userFormality = 'formal';
+            }
+            
+            // Detect detail preference
+            if (/(explain|detailed|break down|analyze)/i.test(message)) {
+                aiIntelligence.conversationStyle.userDetailPreference = 'detailed';
+            } else if (/(quick|brief|short)/i.test(message)) {
+                aiIntelligence.conversationStyle.userDetailPreference = 'brief';
+            }
+            
+            // Detect emoji usage
+            if (/[😀-🙏🏀-🏈⚽-⚾🎯-🎰]/g.test(message)) {
+                aiIntelligence.conversationStyle.usesEmojis = true;
+            }
+            
+            // Update learning metrics
+            aiIntelligence.learningMetrics.totalLearningScore = 
+                Math.min(100, aiIntelligence.userProfile.interactionCount * 0.5);
+            
+            // Save intelligence
+            saveIntelligence();
+        }
 
-            // If no sport but asking about odds, use last sport or prompt
-            if (!detectedSport && /(odds|games|lines|spreads|bets)/i.test(lowerMsg)) {
-                if (memory.lastSport) {
-                    detectedSport = memory.lastSport;
+        function learnFromBotResponse(response) {
+            // Learn from successful responses
+            if (response.text && response.text.length > 10) {
+                // Track response patterns that work well
+                const responseLength = response.text.length;
+                if (responseLength < 100) {
+                    aiIntelligence.conversationStyle.responseLength = 'short';
+                } else if (responseLength < 300) {
+                    aiIntelligence.conversationStyle.responseLength = 'medium';
                 } else {
-                    return { text: "Which sport? I cover NFL, NBA, MLB, NHL, UFC, and more.", isHtml: false };
+                    aiIntelligence.conversationStyle.responseLength = 'long';
                 }
+                
+                // Add successful phrases to memory
+                if (response.text.includes('💎') || response.text.includes('🎯')) {
+                    aiIntelligence.responseGeneration.personalizedPhrases.push('value_bet_emojis');
+                }
+                
+                if (response.text.includes('Based on our previous')) {
+                    aiIntelligence.responseGeneration.contextualMemory.push('contextual_reference');
+                }
+                
+                saveIntelligence();
             }
+        }
 
+        async function processMessageWithIntelligence(message) {
+            const lowerMsg = message.toLowerCase();
+            
+            // Generate personalized greeting if it's a greeting
+            if (isGreeting(lowerMsg)) {
+                return generatePersonalizedGreeting();
+            }
+            
+            // Generate personalized thanks response
+            if (isThanks(lowerMsg)) {
+                return generatePersonalizedThanks();
+            }
+            
+            // Generate personalized help
+            if (isHelp(lowerMsg)) {
+                return generatePersonalizedHelp();
+            }
+            
+            // Analyze query type
+            const queryType = analyzeQueryType(message);
+            
+            // Detect sport
+            let detectedSport = detectSportFromMessage(message);
+            
+            // If no sport but we have learned preferences, suggest
+            if (!detectedSport && aiIntelligence.sportsPreferences.mostAskedSport) {
+                detectedSport = aiIntelligence.sportsPreferences.mostAskedSport;
+            }
+            
+            // Handle complex queries with intelligence
+            if (queryType.includes('RANK') && detectedSport) {
+                return await handleIntelligentRanking(message, detectedSport, queryType);
+            }
+            
+            if (queryType.includes('PREDICTION') && detectedSport) {
+                return await handleIntelligentPrediction(message, detectedSport);
+            }
+            
+            if (queryType.includes('COMPARE') && detectedSport) {
+                return await handleIntelligentComparison(message, detectedSport);
+            }
+            
+            if (queryType.includes('VALUE') && detectedSport) {
+                return await handleIntelligentValueBets(message, detectedSport);
+            }
+            
+            // Standard odds query with personalization
             if (detectedSport) {
                 try {
                     const odds = await fetchOdds(detectedSport);
                     if (odds.length === 0) {
-                        return { text: `No ${getSportName(detectedSport)} games scheduled right now. Try another sport?`, isHtml: false };
+                        return { 
+                            text: generatePersonalizedNoGamesResponse(detectedSport), 
+                            isHtml: false 
+                        };
                     }
-                    return { text: formatOddsResponse(odds, detectedSport), isHtml: true };
+                    
+                    // Add personalized intro based on learned preferences
+                    const personalizedIntro = generatePersonalizedSportIntro(detectedSport);
+                    const oddsHtml = formatOddsResponse(odds, detectedSport);
+                    
+                    return {
+                        text: personalizedIntro + oddsHtml,
+                        isHtml: true
+                    };
+                    
                 } catch (error) {
-                    throw new Error("Couldn't fetch odds. Try again in a moment.");
+                    throw new Error(generatePersonalizedErrorResponse());
                 }
             }
-
-            // Memory query
+            
+            // Memory query with personalization
             if (/(what do you remember|my preferences|favorite)/i.test(lowerMsg)) {
-                return generateMemoryResponse();
+                return generateIntelligentMemoryResponse();
             }
-
-            // List sports
-            if (/(list sports|what sports)/i.test(lowerMsg)) {
-                const sports = Object.keys(SPORTS_MAP).slice(0, 10).join(', ');
-                return { text: `I cover: ${sports}. Ask about any of these!`, isHtml: false };
-            }
-
-            return { text: "I specialize in sports odds. Try asking about NFL, NBA, or other sports!", isHtml: false };
+            
+            // Fallback with learned context
+            return generateIntelligentFallbackResponse();
         }
 
-        function updateMemory(message) {
-            // Track user preferences
-            if (/(like|love|prefer|favorite)/i.test(message)) {
-                // Extract team/sport from message
-                const teams = ['lakers', 'warriors', 'celtics', 'yankees', 'cowboys'];
-                teams.forEach(team => {
-                    if (message.includes(team)) {
-                        memory.userPreferences.favoriteTeam = team;
-                    }
-                });
+        // ==================== PERSONALIZED RESPONSE GENERATORS ====================
+
+        function generatePersonalizedGreeting() {
+            const interactions = aiIntelligence.userProfile.interactionCount;
+            const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
+            const sportName = favSport ? getSportName(favSport) : "sports";
+            const timeOfDay = new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening";
+            
+            let greeting = "";
+            
+            if (interactions === 0) {
+                greeting = "Hi there! I'm Hive AI, your sports analytics assistant. I'll learn from our conversations to give you better insights!";
+            } else if (interactions < 3) {
+                greeting = `Good ${timeOfDay}! Back for more sports analysis?`;
+            } else {
+                const greetings = [
+                    `Good ${timeOfDay}! Great to see you again. Ready to analyze some ${sportName}?`,
+                    `Hey! I was just thinking about our last ${sportName} conversation. What shall we dive into today?`,
+                    `Welcome back! I've been updating my algorithms based on our previous chats. What sport interests you?`
+                ];
+                greeting = greetings[Math.floor(Math.random() * greetings.length)];
             }
             
-            saveToStorage();
+            // Add emoji if user uses them
+            if (aiIntelligence.conversationStyle.usesEmojis) {
+                greeting += " 🎯";
+            }
+            
+            return { text: greeting, isHtml: false };
         }
 
-        function generateMemoryResponse() {
-            const favoriteSport = getMostFavoriteSport();
-            let response = "<p>Here's what I remember:</p>";
+        function generatePersonalizedThanks() {
+            const responses = [
+                "You're welcome! Happy to help.",
+                "Anytime! That's what I'm here for.",
+                "No problem at all!",
+                "Glad I could assist!"
+            ];
             
-            if (favoriteSport) {
-                response += `<p>Your most asked sport: <strong>${getSportName(favoriteSport)}</strong></p>`;
+            let response = responses[Math.floor(Math.random() * responses.length)];
+            
+            // Add personal touch if we have history
+            if (aiIntelligence.userProfile.interactionCount > 5) {
+                response += " Looking forward to our next analysis session!";
             }
             
-            if (memory.userPreferences.favoriteTeam) {
-                response += `<p>Favorite team mentioned: <strong>${memory.userPreferences.favoriteTeam}</strong></p>`;
+            if (aiIntelligence.conversationStyle.usesEmojis) {
+                response += " 👍";
             }
             
-            response += `<p>Total queries: <strong>${memory.totalQueries}</strong></p>`;
+            return { text: response, isHtml: false };
+        }
+
+        function generatePersonalizedHelp() {
+            const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
+            const sportExample = favSport ? getSportName(favSport) : "NBA";
+            
+            const helpText = `
+                <p>Based on ${aiIntelligence.userProfile.interactionCount} previous interactions, I've learned to understand:</p>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    <li><strong>Rankings:</strong> "Rank tomorrow's ${sportExample} games by win %"</li>
+                    <li><strong>Predictions:</strong> "Show me ${sportExample} predictions"</li>
+                    <li><strong>Value Analysis:</strong> "What are the best value bets?"</li>
+                    <li><strong>Comparisons:</strong> "Compare team A vs team B"</li>
+                </ul>
+                <p style="margin-top: 12px;">The more we chat, the better I understand your preferences! 🚀</p>
+            `;
+            
+            return { text: helpText, isHtml: true };
+        }
+
+        function generatePersonalizedSportIntro(sportKey) {
+            const sportName = getSportName(sportKey);
+            const isFavorite = aiIntelligence.sportsPreferences.mostAskedSport === sportKey;
+            const interactionCount = aiIntelligence.userProfile.interactionCount;
+            
+            let intro = "";
+            
+            if (isFavorite && interactionCount > 3) {
+                const intros = [
+                    `<p><i class="fas fa-star"></i> <strong>Your favorite: ${sportName}</strong></p>`,
+                    `<p><i class="fas fa-brain"></i> <strong>${sportName} analysis</strong> (based on your preferences)</p>`,
+                    `<p><i class="fas fa-chart-line"></i> <strong>${sportName} insights</strong> tailored for you</p>`
+                ];
+                intro = intros[Math.floor(Math.random() * intros.length)];
+            } else {
+                intro = `<p><i class="fas fa-${SPORT_ICONS[sportKey] || 'trophy'}"></i> <strong>${sportName} Odds</strong></p>`;
+            }
+            
+            return intro;
+        }
+
+        function generatePersonalizedNoGamesResponse(sportKey) {
+            const sportName = getSportName(sportKey);
+            const altSport = getAlternativeSportSuggestion(sportKey);
+            
+            if (aiIntelligence.userProfile.interactionCount > 5) {
+                return `No ${sportName} games found right now. Since you often ask about ${sportName}, maybe try ${altSport}?`;
+            }
+            
+            return `No ${sportName} games scheduled. Try ${altSport} or another sport?`;
+        }
+
+        function generatePersonalizedErrorResponse() {
+            if (apiFallbackUsed) {
+                return "Having trouble connecting to odds data. I'll keep trying in the background.";
+            }
+            
+            if (aiIntelligence.userProfile.interactionCount > 10) {
+                return "Temporary data issue. Based on our history, you might want to try again in a moment.";
+            }
+            
+            return "Couldn't fetch odds data. Please try again.";
+        }
+
+        function generateIntelligentMemoryResponse() {
+            const interactions = aiIntelligence.userProfile.interactionCount;
+            const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
+            const sportName = favSport ? getSportName(favSport) : "various sports";
+            const topSports = Object.entries(aiIntelligence.sportsPreferences.sportFrequency)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([sport, count]) => `${getSportName(sport)} (${count}x)`)
+                .join(', ');
+            
+            let response = `
+                <div class="info-message">
+                    <i class="fas fa-brain"></i> <strong>My Learning Progress</strong>
+                </div>
+                <p>After ${interactions} conversations, I've learned:</p>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    <li>You mostly ask about: <strong>${topSports}</strong></li>
+                    <li>Your preferred style: <strong>${aiIntelligence.conversationStyle.userDetailPreference}</strong> responses</li>
+                    <li>Learning score: <strong>${Math.round(aiIntelligence.learningMetrics.totalLearningScore)}/100</strong></li>
+                </ul>
+            `;
+            
+            if (interactions > 20) {
+                response += `<p style="margin-top: 12px; color: var(--accent);"><i class="fas fa-rocket"></i> Expert level unlocked! I now anticipate your ${sportName} queries.</p>`;
+            }
             
             return { text: response, isHtml: true };
         }
 
-        function getMostFavoriteSport() {
-            if (Object.keys(memory.favoriteSports).length === 0) return null;
+        function generateIntelligentFallbackResponse() {
+            const interactions = aiIntelligence.userProfile.interactionCount;
+            const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
             
-            return Object.entries(memory.favoriteSports)
-                .sort((a, b) => b[1] - a[1])[0][0];
+            let suggestion = "";
+            if (favSport && interactions > 3) {
+                const sportName = getSportName(favSport);
+                suggestion = ` Since you often ask about ${sportName}, try: "Rank ${sportName} games by win %"`;
+            }
+            
+            const responses = [
+                `I specialize in sports analytics. Try asking about odds, rankings, or predictions.${suggestion}`,
+                `Sports analysis is my game! Ask me to rank games, predict winners, or find value bets.${suggestion}`,
+                `Let's analyze some sports data! You can ask for rankings, predictions, or team comparisons.${suggestion}`
+            ];
+            
+            return { 
+                text: responses[Math.floor(Math.random() * responses.length)], 
+                isHtml: false 
+            };
         }
 
-        // ==================== API FUNCTIONS ====================
+        // ==================== INTELLIGENT QUERY HANDLERS ====================
 
-        async function fetchOdds(sport) {
-            // Try primary API first
+        async function handleIntelligentRanking(message, sport, queryType) {
             try {
-                return await fetchWithApi(API_KEYS.primary, sport, 'primary');
+                const odds = await fetchOdds(sport);
+                if (odds.length === 0) {
+                    return { 
+                        text: generatePersonalizedNoGamesResponse(sport), 
+                        isHtml: false 
+                    };
+                }
+                
+                const gamesWithProbabilities = calculateWinProbabilities(odds);
+                
+                // Sort based on query type
+                let sortedGames;
+                if (queryType.includes('WIN_PERCENT')) {
+                    sortedGames = gamesWithProbabilities.sort((a, b) => b.winProbability - a.winProbability);
+                } else {
+                    sortedGames = gamesWithProbabilities.sort((a, b) => a.avgOdds - b.avgOdds);
+                }
+                
+                // Limit based on learned preference
+                const topMatch = message.match(/top (\d+)/i);
+                let limit = topMatch ? parseInt(topMatch[1]) : 5;
+                
+                // Adjust based on user's detail preference
+                if (aiIntelligence.conversationStyle.userDetailPreference === 'brief') {
+                    limit = Math.min(limit, 3);
+                } else if (aiIntelligence.conversationStyle.userDetailPreference === 'detailed') {
+                    limit = Math.min(limit, 10);
+                }
+                
+                const displayGames = sortedGames.slice(0, limit);
+                
+                // Add personalized context
+                const personalContext = aiIntelligence.userProfile.interactionCount > 10 ? 
+                    `<div class="info-message">
+                        <i class="fas fa-lightbulb"></i> Ranked based on your preference for ${aiIntelligence.conversationStyle.userDetailPreference} analysis
+                    </div>` : '';
+                
+                return { 
+                    text: personalContext + generateRankingTable(displayGames, sport, queryType), 
+                    isHtml: true 
+                };
+                
             } catch (error) {
-                console.log('Primary API failed, trying backup...');
-                currentApi = 'backup';
-                return await fetchWithApi(API_KEYS.backup, sport, 'backup');
+                throw new Error(generatePersonalizedErrorResponse());
             }
         }
 
-        async function fetchWithApi(apiKey, sport, apiName) {
+        async function handleIntelligentPrediction(message, sport) {
+            try {
+                const odds = await fetchOdds(sport);
+                if (odds.length === 0) {
+                    return { 
+                        text: generatePersonalizedNoGamesResponse(sport), 
+                        isHtml: false 
+                    };
+                }
+                
+                const predictions = calculateWinProbabilities(odds)
+                    .map(game => {
+                        const favorite = game.homeWinProbability > game.awayWinProbability ? 
+                            `${game.homeTeam} (${Math.round(game.homeWinProbability)}%)` : 
+                            `${game.awayTeam} (${Math.round(game.awayWinProbability)}%)`;
+                        
+                        return {
+                            ...game,
+                            prediction: favorite,
+                            confidence: Math.max(game.homeWinProbability, game.awayWinProbability)
+                        };
+                    })
+                    .sort((a, b) => b.confidence - a.confidence)
+                    .slice(0, 5); // Show top 5 predictions
+                
+                return { 
+                    text: generatePredictionsTable(predictions, sport), 
+                    isHtml: true 
+                };
+                
+            } catch (error) {
+                throw new Error(generatePersonalizedErrorResponse());
+            }
+        }
+
+        async function handleIntelligentComparison(message, sport) {
+            // Similar to previous but with personalized touches
+            const teamRegex = /(?:compare|versus|vs|matchup|head to head)\s+(.+?)\s+(?:and|vs|versus)\s+(.+)/i;
+            const match = message.match(teamRegex);
+            
+            if (!match) {
+                return { 
+                    text: "Please specify teams to compare. Example: 'Compare Lakers vs Warriors'", 
+                    isHtml: false 
+                };
+            }
+            
+            try {
+                const odds = await fetchOdds(sport);
+                const game = odds.find(g => 
+                    g.home_team.toLowerCase().includes(match[1].toLowerCase()) || 
+                    g.away_team.toLowerCase().includes(match[1].toLowerCase()) ||
+                    g.home_team.toLowerCase().includes(match[2].toLowerCase()) || 
+                    g.away_team.toLowerCase().includes(match[2].toLowerCase())
+                );
+                
+                if (!game) {
+                    return { 
+                        text: `Couldn't find a matchup between ${match[1]} and ${match[2]}.`, 
+                        isHtml: false 
+                    };
+                }
+                
+                return { 
+                    text: generateComparisonTable(game, match[1], match[2]), 
+                    isHtml: true 
+                };
+                
+            } catch (error) {
+                throw new Error(generatePersonalizedErrorResponse());
+            }
+        }
+
+        async function handleIntelligentValueBets(message, sport) {
+            try {
+                const odds = await fetchOdds(sport);
+                if (odds.length === 0) {
+                    return { 
+                        text: generatePersonalizedNoGamesResponse(sport), 
+                        isHtml: false 
+                    };
+                }
+                
+                const valueBets = findValueBets(odds);
+                
+                // Add personalized note about value betting
+                const personalNote = aiIntelligence.userProfile.interactionCount > 15 ? 
+                    `<div class="info-message">
+                        <i class="fas fa-gem"></i> Based on our history, you seem interested in value bets. Here are today's best opportunities:
+                    </div>` : '';
+                
+                return { 
+                    text: personalNote + generateValueBetsTable(valueBets.slice(0, 5), sport), 
+                    isHtml: true 
+                };
+                
+            } catch (error) {
+                throw new Error(generatePersonalizedErrorResponse());
+            }
+        }
+
+        // ==================== HELPER FUNCTIONS ====================
+
+        function analyzeQueryType(message) {
+            const types = [];
+            
+            for (const [pattern, regex] of Object.entries(QUERY_PATTERNS)) {
+                if (regex.test(message)) {
+                    types.push(pattern);
+                }
+            }
+            
+            return types.length > 0 ? types : ['STANDARD'];
+        }
+
+        function detectSportFromMessage(message) {
+            const lowerMsg = message.toLowerCase();
+            for (const [keyword, sportKey] of Object.entries(SPORTS_MAP)) {
+                if (lowerMsg.includes(keyword)) {
+                    return sportKey;
+                }
+            }
+            return null;
+        }
+
+        function getAlternativeSportSuggestion(currentSport) {
+            const sports = ['basketball_nba', 'americanfootball_nfl', 'baseball_mlb'];
+            const currentIndex = sports.indexOf(currentSport);
+            return currentIndex >= 0 && currentIndex < sports.length - 1 ? 
+                getSportName(sports[currentIndex + 1]) : getSportName(sports[0]);
+        }
+
+        function isGreeting(message) {
+            return /^(hi|hello|hey|howdy|good morning|good afternoon|good evening)/i.test(message);
+        }
+
+        function isThanks(message) {
+            return /(thank|thanks|appreciate|thx)/i.test(message);
+        }
+
+        function isHelp(message) {
+            return /(help|what can you do|how do i)/i.test(message);
+        }
+
+        function getSportName(sportKey) {
+            const names = {
+                'americanfootball_nfl': 'NFL',
+                'basketball_nba': 'NBA',
+                'baseball_mlb': 'MLB',
+                'icehockey_nhl': 'NHL',
+                'soccer_usa_mls': 'MLS',
+                'soccer_epl': 'EPL',
+                'mma_mixed_martial_arts': 'UFC',
+                'americanfootball_ncaaf': 'NCAAF',
+                'basketball_ncaab': 'NCAAB'
+            };
+            return names[sportKey] || sportKey;
+        }
+
+        // ==================== DATA PROCESSING FUNCTIONS ====================
+
+        async function fetchOdds(sport) {
+            // Try primary API silently
+            try {
+                const data = await fetchWithApi(API_KEYS.primary, sport);
+                currentApi = 'primary';
+                return data;
+            } catch (error) {
+                // Silently switch to backup
+                console.log('Switching to backup API...');
+                apiFallbackUsed = true;
+                currentApi = 'backup';
+                return await fetchWithApi(API_KEYS.backup, sport);
+            }
+        }
+
+        async function fetchWithApi(apiKey, sport) {
             const url = `${API_BASE}/sports/${sport}/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads&oddsFormat=american`;
             
             const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`${apiName} API request failed`);
+                throw new Error('API request failed');
             }
             
             const data = await response.json();
-            return data.slice(0, 5); // Return first 5 games
+            return data.slice(0, 10);
+        }
+
+        function calculateWinProbabilities(games) {
+            return games.map(game => {
+                let homeWinProbability = 50;
+                let awayWinProbability = 50;
+                let avgOdds = 0;
+                
+                if (game.bookmakers?.[0]?.markets?.[0]?.outcomes) {
+                    const outcomes = game.bookmakers[0].markets[0].outcomes;
+                    
+                    outcomes.forEach(outcome => {
+                        const odds = outcome.price;
+                        let probability;
+                        
+                        if (odds > 0) {
+                            probability = 100 / (odds + 100);
+                        } else {
+                            probability = Math.abs(odds) / (Math.abs(odds) + 100);
+                        }
+                        
+                        if (outcome.name === game.home_team) {
+                            homeWinProbability = probability * 100;
+                        } else {
+                            awayWinProbability = probability * 100;
+                        }
+                        
+                        avgOdds += Math.abs(odds);
+                    });
+                    
+                    avgOdds /= outcomes.length;
+                }
+                
+                const winProbability = Math.max(homeWinProbability, awayWinProbability);
+                
+                return {
+                    ...game,
+                    homeTeam: game.home_team,
+                    awayTeam: game.away_team,
+                    homeWinProbability,
+                    awayWinProbability,
+                    winProbability,
+                    avgOdds,
+                    favorite: homeWinProbability > awayWinProbability ? game.home_team : game.away_team,
+                    bestBet: determineBestBet(homeWinProbability, awayWinProbability)
+                };
+            });
+        }
+
+        function determineBestBet(homeProb, awayProb) {
+            const edge = Math.abs(homeProb - awayProb);
+            
+            if (edge > 15) return "Big Favorite";
+            if (edge > 8) return "Moderate Favorite";
+            if (edge < 3) return "Close Game";
+            
+            return "Watch";
+        }
+
+        function findValueBets(games) {
+            return calculateWinProbabilities(games)
+                .map(game => {
+                    const valueScore = Math.abs(game.homeWinProbability - game.awayWinProbability) / 10;
+                    return {
+                        ...game,
+                        valueScore,
+                        isValueBet: valueScore > 1.2
+                    };
+                })
+                .filter(game => game.isValueBet)
+                .sort((a, b) => b.valueScore - a.valueScore);
+        }
+
+        // ==================== TABLE GENERATORS (No API messages) ====================
+
+        function generateRankingTable(games, sport, queryType) {
+            const sportName = getSportName(sport);
+            const title = queryType.includes('WIN_PERCENT') ? 
+                `Top ${games.length} ${sportName} Games by Win Probability` :
+                `Top ${games.length} ${sportName} Games`;
+            
+            let html = `
+                <div class="ranking-table">
+                    <div class="ranking-header">
+                        <div>Rank</div>
+                        <div>Matchup</div>
+                        <div>Win %</div>
+                        <div>Best Bet</div>
+                    </div>
+            `;
+            
+            games.forEach((game, index) => {
+                const probability = Math.max(game.homeWinProbability, game.awayWinProbability);
+                const probabilityClass = probability >= 65 ? 'high-probability' : 
+                                        probability >= 55 ? 'medium-probability' : 'low-probability';
+                
+                html += `
+                    <div class="ranking-row">
+                        <div class="rank-number">#${index + 1}</div>
+                        <div class="rank-team">
+                            <div class="team-name">${game.homeTeam}</div>
+                            <div class="team-matchup">vs ${game.awayTeam}</div>
+                            <div class="probability-bar">
+                                <div class="probability-fill ${probabilityClass}" style="width: ${probability}%"></div>
+                            </div>
+                        </div>
+                        <div class="win-percentage">${Math.round(probability)}%</div>
+                        <div class="best-bet">${game.bestBet}</div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            
+            return html;
+        }
+
+        function generatePredictionsTable(predictions, sport) {
+            const sportName = getSportName(sport);
+            
+            let html = `
+                <p><i class="fas fa-crystal-ball"></i> <strong>${sportName} Predictions</strong></p>
+                <div class="ranking-table">
+                    <div class="ranking-header">
+                        <div>#</div>
+                        <div>Prediction</div>
+                        <div>Confidence</div>
+                        <div>Edge</div>
+                    </div>
+            `;
+            
+            predictions.forEach((pred, index) => {
+                const edge = Math.abs(pred.homeWinProbability - pred.awayWinProbability);
+                const edgeText = edge >= 10 ? 'High' : edge >= 5 ? 'Medium' : 'Low';
+                
+                html += `
+                    <div class="ranking-row">
+                        <div class="rank-number">${index + 1}</div>
+                        <div class="rank-team">
+                            <div class="team-name">${pred.prediction}</div>
+                            <div class="team-matchup">${pred.homeTeam} vs ${pred.awayTeam}</div>
+                        </div>
+                        <div class="win-percentage">${Math.round(pred.confidence)}%</div>
+                        <div class="best-bet">${edgeText}</div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            
+            return html;
+        }
+
+        function generateComparisonTable(game, team1, team2) {
+            const probabilities = calculateWinProbabilities([game])[0];
+            const homeIsTeam1 = game.home_team.toLowerCase().includes(team1.toLowerCase());
+            const team1Prob = homeIsTeam1 ? probabilities.homeWinProbability : probabilities.awayWinProbability;
+            const team2Prob = homeIsTeam1 ? probabilities.awayWinProbability : probabilities.homeWinProbability;
+            
+            return `
+                <div class="odds-card">
+                    <div class="odds-header">
+                        <div class="odds-sport"><i class="fas fa-balance-scale"></i> Matchup Analysis</div>
+                        <div class="odds-time">Head-to-Head</div>
+                    </div>
+                    <div class="odds-matchup" style="text-align: center; font-size: 16px;">
+                        ${team1} vs ${team2}
+                    </div>
+                    <div class="odds-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="odds-item">
+                            <div class="odds-label">${team1} Win %</div>
+                            <div class="odds-value">${Math.round(team1Prob)}%</div>
+                            <div class="probability-bar">
+                                <div class="probability-fill ${team1Prob >= 50 ? 'high-probability' : 'low-probability'}" 
+                                     style="width: ${team1Prob}%"></div>
+                            </div>
+                        </div>
+                        <div class="odds-item">
+                            <div class="odds-label">${team2} Win %</div>
+                            <div class="odds-value">${Math.round(team2Prob)}%</div>
+                            <div class="probability-bar">
+                                <div class="probability-fill ${team2Prob >= 50 ? 'high-probability' : 'low-probability'}" 
+                                     style="width: ${team2Prob}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; text-align: center; color: var(--accent); font-size: 12px;">
+                        <i class="fas fa-lightbulb"></i> ${team1Prob > team2Prob ? team1 : team2} is favored by ${Math.abs(Math.round(team1Prob - team2Prob))}%
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateValueBetsTable(valueBets, sport) {
+            const sportName = getSportName(sport);
+            
+            if (valueBets.length === 0) {
+                return `<div class="info-message">
+                    <i class="fas fa-search"></i> No strong value bets found in ${sportName} right now.
+                </div>`;
+            }
+            
+            let html = `
+                <p><i class="fas fa-gem"></i> <strong>${sportName} Value Bets</strong></p>
+                <div class="ranking-table">
+                    <div class="ranking-header">
+                        <div>#</div>
+                        <div>Game</div>
+                        <div>Value</div>
+                        <div>Play</div>
+                    </div>
+            `;
+            
+            valueBets.forEach((bet, index) => {
+                const valueScore = bet.valueScore.toFixed(1);
+                
+                html += `
+                    <div class="ranking-row">
+                        <div class="rank-number">${index + 1}</div>
+                        <div class="rank-team">
+                            <div class="team-name">${bet.homeTeam} vs ${bet.awayTeam}</div>
+                            <div class="team-matchup">Fav: ${bet.favorite} (${Math.round(bet.winProbability)}%)</div>
+                        </div>
+                        <div class="win-percentage">${valueScore}x</div>
+                        <div class="best-bet" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">
+                            <i class="fas fa-check-circle"></i> Value
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            
+            return html;
         }
 
         function formatOddsResponse(games, sport) {
@@ -1109,48 +2003,17 @@
                 html += `</div></div>`;
             });
 
-            // Add API status
-            html += `<div class="success-message">
-                <i class="fas fa-check-circle"></i> Using ${currentApi} API • ${games.length} games found
-            </div>`;
-
             return html;
-        }
-
-        function getSportName(sportKey) {
-            const names = {
-                'americanfootball_nfl': 'NFL', 'americanfootball_ncaaf': 'NCAAF',
-                'basketball_nba': 'NBA', 'basketball_ncaab': 'NCAAB',
-                'baseball_mlb': 'MLB', 'icehockey_nhl': 'NHL',
-                'soccer_usa_mls': 'MLS', 'soccer_epl': 'EPL',
-                'mma_mixed_martial_arts': 'UFC'
-            };
-            return names[sportKey] || sportKey;
-        }
-
-        function saveConversation() {
-            // Don't save if already exists
-            const existing = allConversations.find(c => c.id === currentConversation.id);
-            if (!existing) {
-                allConversations.unshift({ ...currentConversation });
-                
-                // Keep only last 20 conversations
-                if (allConversations.length > 20) {
-                    allConversations = allConversations.slice(0, 20);
-                }
-                
-                saveToStorage();
-            }
         }
 
         // ==================== INITIALIZE ====================
 
         document.addEventListener('DOMContentLoaded', initialize);
         
-        // Prevent zoom on input focus for mobile
+        // Prevent zoom on input focus
         document.addEventListener('touchstart', function(e) {
             if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
-                // Already handled by CSS
+                // Prevent default zoom behavior
             }
         }, { passive: true });
     </script>
