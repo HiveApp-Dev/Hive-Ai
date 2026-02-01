@@ -931,6 +931,9 @@
             
             // Save intelligence
             saveIntelligence();
+            
+            // Add click event listener to send button
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
         }
 
         function loadIntelligence() {
@@ -1093,17 +1096,20 @@
             return div.innerHTML;
         }
 
-        // ==================== ENHANCED MESSAGE PROCESSING WITH AI LEARNING ====================
+        // ==================== SEND MESSAGE FUNCTION (FIXED) ====================
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
+            const sendBtn = document.getElementById('sendBtn');
 
-            if (!message || isProcessing) return;
+            if (!message || isProcessing) {
+                return;
+            }
 
             isProcessing = true;
-            const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Show loading spinner
 
             // Add user message
             addMessage(message, true);
@@ -1131,13 +1137,16 @@
             } catch (error) {
                 removeTypingIndicator();
                 addMessage(`<div class="error-message"><i class="fas fa-exclamation-circle"></i> ${error.message}</div>`, false, true);
+                console.error('Error in sendMessage:', error);
+            } finally {
+                // Always reset button state
+                isProcessing = false;
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-arrow-up"></i>'; // Reset to arrow icon
+                
+                // Update intelligence display
+                updateIntelligenceDisplay();
             }
-
-            isProcessing = false;
-            sendBtn.disabled = false;
-            
-            // Update intelligence display
-            updateIntelligenceDisplay();
         }
 
         function learnFromUserMessage(message) {
