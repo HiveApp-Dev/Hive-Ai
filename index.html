@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hive AI - Sports Odds Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --bg-glass-hover: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-light: rgba(255, 255, 255, 0.12);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.5);
+            --accent: #f59e0b;
+            --accent-glow: rgba(245, 158, 11, 0.4);
+            --accent-red: #ef4444;
+            --error: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation;
+        }
+
+        /* Ambient Background */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--accent);
+            top: -200px;
+            right: -200px;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-red);
+            bottom: -100px;
+            left: -100px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--glass-border-light);
+            box-shadow: 0 0 20px var(--accent-glow);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .header-avatar:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .header-info h1 {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .header-info span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--accent);
+            background: rgba(245, 158, 11, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 0;
+            scroll-behavior: smooth;
+            position: relative;
+            z-index: 5;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 3px;
+        }
+
+        .messages-wrapper {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Message Styles */
+        .message {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 24px;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            overflow: hidden;
+            border: 1px solid var(--glass-border-light);
+        }
+
+        .message-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(239, 68, 68, 0.3));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 14px;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(16, 185, 129, 0.3));
+        }
+
+        .message-bubble {
+            flex: 1;
+            max-width: 100%;
+        }
+
+        .message.user .message-bubble {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            border-top-left-radius: 4px;
+            padding: 14px 18px;
+        }
+
+        .message.bot .message-bubble {
+            padding: 4px 0;
+        }
+
+        .message-content {
+            line-height: 1.7;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+        }
+
+        .message-content p {
+            margin-bottom: 12px;
+        }
+
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        /* Odds Card - Glass Style */
+        .odds-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 14px 0;
+            transition: all 0.3s ease;
+        }
+
+        .odds-card:hover {
+            background: var(--bg-glass-hover);
+            border-color: var(--glass-border-light);
+        }
+
+        .odds-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .odds-sport {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent);
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+        }
+
+        .odds-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .odds-matchup {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 14px;
+            letter-spacing: -0.01em;
+        }
+
+        .odds-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .odds-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .odds-item:hover {
+            background: rgba(245, 158, 11, 0.05);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .odds-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .odds-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+
+        .odds-team {
+            font-size: 11px;
+            color: var(--text-primary);
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 10px 0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.3;
+            }
+            30% {
+                transform: translateY(-8px);
+                opacity: 1;
+            }
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px 24px;
+            position: relative;
+            z-index: 10;
+            flex-shrink: 0;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .input-wrapper {
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 12px 18px;
+            transition: all 0.3s ease;
+        }
+
+        .input-container:focus-within {
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.1);
+        }
+
+        .input-container textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            max-height: 120px;
+            line-height: 1.5;
+            padding: 0;
+            min-height: 24px;
+        }
+
+        .input-container textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent), #ea580c);
+            color: #000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px var(--accent-glow);
+        }
+
+        .send-btn:disabled {
+            background: var(--glass-border);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Error State */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 14px;
+            color: var(--error);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Success Message */
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 14px;
+            color: var(--success);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px;
+            opacity: 0.6;
+        }
+
+        .empty-state img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 0 40px var(--accent-glow);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .empty-state img:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 50px var(--accent-glow);
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .header { padding: 12px 16px; }
+            .header-avatar { width: 36px; height: 36px; }
+            .header-status { display: none; }
+            .messages-wrapper { padding: 0 16px; }
+            .input-area { padding: 16px; }
+            .message { gap: 10px; }
+            .message-avatar { width: 32px; height: 32px; border-radius: 50%; }
+            .odds-grid { grid-template-columns: repeat(2, 1fr); }
+            .input-container { padding: 10px 14px; }
+            .send-btn { width: 36px; height: 36px; }
+        }
+
+        /* Mobile-specific fixes */
+        @media (max-width: 480px) {
+            textarea, input, select {
+                font-size: 16px !important; /* Prevents iOS zoom */
+            }
+            
+            .input-container textarea {
+                font-size: 16px;
+            }
+        }
+
+        /* Prevent zoom on focus for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .input-container textarea {
+                font-size: 16px;
+                line-height: 1.4;
+            }
+        }
+
+        /* Hide suggestions */
+        .suggestions {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-bg">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-left">
+            <a href="https://t.me/Moneylinebott" target="_blank" rel="noopener noreferrer">
+                <img src="https://pfst.cf2.poecdn.net/base/image/5c23342b1b649614b7519f7acbcab5f36510998541d798918faca857e7d0eabc?w=814&h=768" alt="Bot" class="header-avatar">
+            </a>
+            <div class="header-info">
+                <h1>Hive AI</h1>
+                <span>Sports Odds Assistant</span>
+            </div>
+        </div>
+        <div class="header-status">
+            <span class="status-dot"></span>
+            Live Odds
+        </div>
+    </header>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="messages-wrapper" id="messagesWrapper">
+            <div class="empty-state" id="emptyState">
+                <a href="https://t.me/Moneylinebott" target="_blank" rel="noopener noreferrer">
+                    <img src="https://pfst.cf2.poecdn.net/base/image/5c23342b1b649614b7519f7acbcab5f36510998541d798918faca857e7d0eabc?w=814&h=768" alt="Bot">
+                </a>
+                <p>Ask me about sports odds</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper">
+            <div class="input-container">
+                <textarea
+                    id="messageInput"
+                    placeholder="Ask about NFL, NBA, MLB odds..."
+                    rows="1"
+                    onkeydown="handleKeyDown(event)"
+                    oninput="autoResize(this)"
+                ></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <i class="fas fa-arrow-up"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== ENHANCED CORE SYSTEM ====================
+        
+        // Multiple API Keys with Fallback
+        const API_KEYS = {
+            primary: '47c05ed65257b06a22df0ef01fc72e66',
+            backup: '6bac22532f0b5a35e27fbce8bef399d0'
+        };
+
+        const API_BASE = 'https://api.the-odds-api.com/v4';
+        const BOT_IMAGE = 'https://pfst.cf2.poecdn.net/base/image/5c23342b1b649614b7519f7acbcab5f36510998541d798918faca857e7d0eabc?w=814&h=768';
+        
+        // Storage Keys for LocalStorage
+        const STORAGE_KEYS = {
+            CONVERSATIONS: 'hive_conversations',
+            MEMORY: 'hive_memory',
+            CURRENT: 'hive_current'
+        };
+
+        // Sports Mapping
+        const SPORTS_MAP = {
+            'nfl': 'americanfootball_nfl',
+            'football': 'americanfootball_nfl',
+            'nba': 'basketball_nba',
+            'basketball': 'basketball_nba',
+            'mlb': 'baseball_mlb',
+            'baseball': 'baseball_mlb',
+            'nhl': 'icehockey_nhl',
+            'hockey': 'icehockey_nhl',
+            'soccer': 'soccer_usa_mls',
+            'mls': 'soccer_usa_mls',
+            'premier league': 'soccer_epl',
+            'epl': 'soccer_epl',
+            'ufc': 'mma_mixed_martial_arts',
+            'mma': 'mma_mixed_martial_arts',
+            'ncaaf': 'americanfootball_ncaaf',
+            'college football': 'americanfootball_ncaaf',
+            'ncaab': 'basketball_ncaab',
+            'college basketball': 'basketball_ncaab'
+        };
+
+        const SPORT_ICONS = {
+            'americanfootball_nfl': 'football',
+            'americanfootball_ncaaf': 'football',
+            'basketball_nba': 'basketball',
+            'basketball_ncaab': 'basketball',
+            'baseball_mlb': 'baseball',
+            'icehockey_nhl': 'hockey-puck',
+            'soccer_usa_mls': 'futbol',
+            'soccer_epl': 'futbol',
+            'mma_mixed_martial_arts': 'hand-fist'
+        };
+
+        // Memory System
+        let memory = {
+            favoriteSports: {},
+            lastSport: null,
+            totalQueries: 0,
+            userPreferences: {}
+        };
+
+        let currentConversation = {
+            id: Date.now().toString(),
+            messages: [],
+            createdAt: new Date().toISOString()
+        };
+
+        let allConversations = [];
+        let isProcessing = false;
+        let currentApi = 'primary';
+
+        // ==================== INITIALIZATION ====================
+
+        function initialize() {
+            loadFromStorage();
+            document.getElementById('messageInput').focus();
+            
+            // Show welcome if first time
+            if (memory.totalQueries === 0) {
+                setTimeout(() => {
+                    addMessage("Hi! I'm Hive AI. Ask me about NFL, NBA, MLB, NHL, UFC, or any sports odds!", false);
+                }, 500);
+            }
+        }
+
+        function loadFromStorage() {
+            try {
+                // Load conversations
+                const savedConvs = localStorage.getItem(STORAGE_KEYS.CONVERSATIONS);
+                if (savedConvs) allConversations = JSON.parse(savedConvs);
+                
+                // Load memory
+                const savedMemory = localStorage.getItem(STORAGE_KEYS.MEMORY);
+                if (savedMemory) memory = JSON.parse(savedMemory);
+                
+                // Load current conversation
+                const current = localStorage.getItem(STORAGE_KEYS.CURRENT);
+                if (current) {
+                    currentConversation = JSON.parse(current);
+                    if (currentConversation.messages.length > 0) {
+                        renderMessages(currentConversation.messages);
+                    }
+                }
+            } catch (error) {
+                console.log('Starting fresh');
+            }
+        }
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.CONVERSATIONS, JSON.stringify(allConversations));
+                localStorage.setItem(STORAGE_KEYS.MEMORY, JSON.stringify(memory));
+                localStorage.setItem(STORAGE_KEYS.CURRENT, JSON.stringify(currentConversation));
+            } catch (error) {
+                console.error('Save error:', error);
+            }
+        }
+
+        // ==================== UI FUNCTIONS ====================
+
+        function autoResize(textarea) {
+            // Prevent iOS zoom
+            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                textarea.style.fontSize = '16px';
+            }
+            
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+            
+            // Scroll to bottom if needed
+            setTimeout(scrollToBottom, 100);
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function hideEmpty() {
+            const empty = document.getElementById('emptyState');
+            if (empty) empty.style.display = 'none';
+        }
+
+        function addMessage(content, isUser = false, isHtml = false) {
+            hideEmpty();
+            const wrapper = document.getElementById('messagesWrapper');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+
+            const avatarContent = isUser
+                ? '<i class="fas fa-user"></i>'
+                : `<img src="${BOT_IMAGE}" alt="Bot">`;
+
+            const time = new Date();
+            const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatarContent}</div>
+                <div class="message-bubble">
+                    <div class="message-content">
+                        ${isHtml ? content : `<p>${escapeHtml(content)}</p>`}
+                    </div>
+                    <div class="message-time">${timeStr}</div>
+                </div>
+            `;
+
+            wrapper.appendChild(messageDiv);
+            scrollToBottom();
+
+            // Save to conversation
+            currentConversation.messages.push({
+                content,
+                isUser,
+                isHtml,
+                timestamp: time.toISOString()
+            });
+
+            saveToStorage();
+
+            return messageDiv;
+        }
+
+        function renderMessages(messages) {
+            const wrapper = document.getElementById('messagesWrapper');
+            wrapper.innerHTML = '';
+            
+            if (messages.length === 0) {
+                document.getElementById('emptyState').style.display = 'flex';
+                return;
+            }
+
+            hideEmpty();
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.isUser ? 'user' : 'bot'}`;
+
+                const avatarContent = msg.isUser
+                    ? '<i class="fas fa-user"></i>'
+                    : `<img src="${BOT_IMAGE}" alt="Bot">`;
+
+                const time = new Date(msg.timestamp);
+                const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">${avatarContent}</div>
+                    <div class="message-bubble">
+                        <div class="message-content">
+                            ${msg.isHtml ? msg.content : `<p>${escapeHtml(msg.content)}</p>`}
+                        </div>
+                        <div class="message-time">${timeStr}</div>
+                    </div>
+                `;
+
+                wrapper.appendChild(messageDiv);
+            });
+            
+            scrollToBottom();
+        }
+
+        function addTypingIndicator() {
+            hideEmpty();
+            const wrapper = document.getElementById('messagesWrapper');
+            const indicator = document.createElement('div');
+            indicator.className = 'message bot';
+            indicator.id = 'typingIndicator';
+            indicator.innerHTML = `
+                <div class="message-avatar"><img src="${BOT_IMAGE}" alt="Bot"></div>
+                <div class="message-bubble">
+                    <div class="typing-indicator">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+            wrapper.appendChild(indicator);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => {
+                const container = document.getElementById('chatContainer');
+                container.scrollTop = container.scrollHeight;
+            }, 100);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== MESSAGE PROCESSING ====================
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message || isProcessing) return;
+
+            isProcessing = true;
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+
+            // Add user message
+            addMessage(message, true);
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Reset focus but prevent zoom
+            setTimeout(() => {
+                input.focus();
+            }, 50);
+
+            // Update memory
+            memory.totalQueries++;
+            
+            // Add typing indicator
+            addTypingIndicator();
+
+            try {
+                const response = await processMessage(message);
+                removeTypingIndicator();
+                addMessage(response.text, false, response.isHtml);
+                
+                // Save conversation if it has enough messages
+                if (currentConversation.messages.length >= 4) {
+                    saveConversation();
+                }
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage(`<div class="error-message"><i class="fas fa-exclamation-circle"></i> ${error.message}</div>`, false, true);
+            }
+
+            isProcessing = false;
+            sendBtn.disabled = false;
+        }
+
+        async function processMessage(message) {
+            const lowerMsg = message.toLowerCase();
+            
+            // Update memory with sport detection
+            updateMemory(lowerMsg);
+
+            // Greetings
+            if (/^(hi|hello|hey|howdy)/i.test(lowerMsg)) {
+                const greetings = [
+                    "Hey! What sport are you interested in?",
+                    "Hello! Ask me about any sport odds.",
+                    "Hi there! Ready to check some lines?"
+                ];
+                return { text: greetings[Math.floor(Math.random() * greetings.length)], isHtml: false };
+            }
+
+            // Thanks
+            if (/(thank|thanks|thx)/i.test(lowerMsg)) {
+                return { text: "You're welcome! Let me know if you need more odds.", isHtml: false };
+            }
+
+            // Help
+            if (/(help|what can you do)/i.test(lowerMsg)) {
+                return { text: "I provide live odds for NFL, NBA, MLB, NHL, UFC, Soccer, and more. Try asking 'NBA odds' or 'Show me NFL lines'", isHtml: false };
+            }
+
+            // Detect sport
+            let detectedSport = null;
+            for (const [keyword, sportKey] of Object.entries(SPORTS_MAP)) {
+                if (lowerMsg.includes(keyword)) {
+                    detectedSport = sportKey;
+                    memory.lastSport = sportKey;
+                    memory.favoriteSports[sportKey] = (memory.favoriteSports[sportKey] || 0) + 1;
+                    break;
+                }
+            }
+
+            // If no sport but asking about odds, use last sport or prompt
+            if (!detectedSport && /(odds|games|lines|spreads|bets)/i.test(lowerMsg)) {
+                if (memory.lastSport) {
+                    detectedSport = memory.lastSport;
+                } else {
+                    return { text: "Which sport? I cover NFL, NBA, MLB, NHL, UFC, and more.", isHtml: false };
+                }
+            }
+
+            if (detectedSport) {
+                try {
+                    const odds = await fetchOdds(detectedSport);
+                    if (odds.length === 0) {
+                        return { text: `No ${getSportName(detectedSport)} games scheduled right now. Try another sport?`, isHtml: false };
+                    }
+                    return { text: formatOddsResponse(odds, detectedSport), isHtml: true };
+                } catch (error) {
+                    throw new Error("Couldn't fetch odds. Try again in a moment.");
+                }
+            }
+
+            // Memory query
+            if (/(what do you remember|my preferences|favorite)/i.test(lowerMsg)) {
+                return generateMemoryResponse();
+            }
+
+            // List sports
+            if (/(list sports|what sports)/i.test(lowerMsg)) {
+                const sports = Object.keys(SPORTS_MAP).slice(0, 10).join(', ');
+                return { text: `I cover: ${sports}. Ask about any of these!`, isHtml: false };
+            }
+
+            return { text: "I specialize in sports odds. Try asking about NFL, NBA, or other sports!", isHtml: false };
+        }
+
+        function updateMemory(message) {
+            // Track user preferences
+            if (/(like|love|prefer|favorite)/i.test(message)) {
+                // Extract team/sport from message
+                const teams = ['lakers', 'warriors', 'celtics', 'yankees', 'cowboys'];
+                teams.forEach(team => {
+                    if (message.includes(team)) {
+                        memory.userPreferences.favoriteTeam = team;
+                    }
+                });
+            }
+            
+            saveToStorage();
+        }
+
+        function generateMemoryResponse() {
+            const favoriteSport = getMostFavoriteSport();
+            let response = "<p>Here's what I remember:</p>";
+            
+            if (favoriteSport) {
+                response += `<p>Your most asked sport: <strong>${getSportName(favoriteSport)}</strong></p>`;
+            }
+            
+            if (memory.userPreferences.favoriteTeam) {
+                response += `<p>Favorite team mentioned: <strong>${memory.userPreferences.favoriteTeam}</strong></p>`;
+            }
+            
+            response += `<p>Total queries: <strong>${memory.totalQueries}</strong></p>`;
+            
+            return { text: response, isHtml: true };
+        }
+
+        function getMostFavoriteSport() {
+            if (Object.keys(memory.favoriteSports).length === 0) return null;
+            
+            return Object.entries(memory.favoriteSports)
+                .sort((a, b) => b[1] - a[1])[0][0];
+        }
+
+        // ==================== API FUNCTIONS ====================
+
+        async function fetchOdds(sport) {
+            // Try primary API first
+            try {
+                return await fetchWithApi(API_KEYS.primary, sport, 'primary');
+            } catch (error) {
+                console.log('Primary API failed, trying backup...');
+                currentApi = 'backup';
+                return await fetchWithApi(API_KEYS.backup, sport, 'backup');
+            }
+        }
+
+        async function fetchWithApi(apiKey, sport, apiName) {
+            const url = `${API_BASE}/sports/${sport}/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads&oddsFormat=american`;
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`${apiName} API request failed`);
+            }
+            
+            const data = await response.json();
+            return data.slice(0, 5); // Return first 5 games
+        }
+
+        function formatOddsResponse(games, sport) {
+            const sportName = getSportName(sport);
+            const icon = SPORT_ICONS[sport] || 'trophy';
+
+            let html = `<p><i class="fas fa-${icon}"></i> <strong>${sportName} Odds</strong></p>`;
+
+            games.forEach(game => {
+                const gameTime = new Date(game.commence_time);
+                const timeStr = gameTime.toLocaleString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                });
+
+                html += `<div class="odds-card">
+                    <div class="odds-header">
+                        <div class="odds-sport"><i class="fas fa-${icon}"></i> ${sportName}</div>
+                        <div class="odds-time">${timeStr}</div>
+                    </div>
+                    <div class="odds-matchup">${game.away_team} @ ${game.home_team}</div>
+                    <div class="odds-grid">`;
+
+                if (game.bookmakers?.length > 0) {
+                    const bookmaker = game.bookmakers[0];
+                    const h2hMarket = bookmaker.markets.find(m => m.key === 'h2h');
+                    if (h2hMarket) {
+                        h2hMarket.outcomes.forEach(outcome => {
+                            const odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
+                            html += `<div class="odds-item">
+                                <div class="odds-label">ML</div>
+                                <div class="odds-value">${odds}</div>
+                                <div class="odds-team">${outcome.name}</div>
+                            </div>`;
+                        });
+                    }
+                    const spreadsMarket = bookmaker.markets.find(m => m.key === 'spreads');
+                    if (spreadsMarket) {
+                        spreadsMarket.outcomes.forEach(outcome => {
+                            const spread = outcome.point > 0 ? `+${outcome.point}` : outcome.point;
+                            html += `<div class="odds-item">
+                                <div class="odds-label">Spread</div>
+                                <div class="odds-value">${spread}</div>
+                                <div class="odds-team">${outcome.name}</div>
+                            </div>`;
+                        });
+                    }
+                }
+                html += `</div></div>`;
+            });
+
+            // Add API status
+            html += `<div class="success-message">
+                <i class="fas fa-check-circle"></i> Using ${currentApi} API • ${games.length} games found
+            </div>`;
+
+            return html;
+        }
+
+        function getSportName(sportKey) {
+            const names = {
+                'americanfootball_nfl': 'NFL', 'americanfootball_ncaaf': 'NCAAF',
+                'basketball_nba': 'NBA', 'basketball_ncaab': 'NCAAB',
+                'baseball_mlb': 'MLB', 'icehockey_nhl': 'NHL',
+                'soccer_usa_mls': 'MLS', 'soccer_epl': 'EPL',
+                'mma_mixed_martial_arts': 'UFC'
+            };
+            return names[sportKey] || sportKey;
+        }
+
+        function saveConversation() {
+            // Don't save if already exists
+            const existing = allConversations.find(c => c.id === currentConversation.id);
+            if (!existing) {
+                allConversations.unshift({ ...currentConversation });
+                
+                // Keep only last 20 conversations
+                if (allConversations.length > 20) {
+                    allConversations = allConversations.slice(0, 20);
+                }
+                
+                saveToStorage();
+            }
+        }
+
+        // ==================== INITIALIZE ====================
+
+        document.addEventListener('DOMContentLoaded', initialize);
+        
+        // Prevent zoom on input focus for mobile
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+                // Already handled by CSS
+            }
+        }, { passive: true });
+    </script>
+</body>
+</html>
