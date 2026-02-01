@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
+
     <!-- iOS/Android Theme Colors -->
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Hive AI">
     <meta name="mobile-web-app-capable" content="yes">
-    
+
     <title>Hive AI - Sports Odds Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -67,7 +67,7 @@
                 padding-right: env(safe-area-inset-right);
                 padding-bottom: env(safe-area-inset-bottom);
             }
-            
+
             .input-area {
                 padding-bottom: calc(20px + env(safe-area-inset-bottom));
             }
@@ -745,10 +745,8 @@
                     id="messageInput"
                     placeholder="Ask: 'Rank tomorrow's NBA games by win %' or 'Show NFL predictions'"
                     rows="1"
-                    onkeydown="handleKeyDown(event)"
-                    oninput="autoResize(this)"
                 ></textarea>
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                <button type="button" class="send-btn" id="sendBtn">
                     <i class="fas fa-arrow-up"></i>
                 </button>
             </div>
@@ -757,7 +755,7 @@
 
     <script>
         // ==================== ENHANCED CORE SYSTEM ====================
-        
+
         // Multiple API Keys with Fallback (silent switching)
         const API_KEYS = {
             primary: '47c05ed65257b06a22df0ef01fc72e66',
@@ -766,7 +764,7 @@
 
         const API_BASE = 'https://api.the-odds-api.com/v4';
         const BOT_IMAGE = 'https://pfst.cf2.poecdn.net/base/image/5c23342b1b649614b7519f7acbcab5f36510998541d798918faca857e7d0eabc?w=814&h=768';
-        
+
         // ONLY ONE STORAGE KEY FOR INTELLIGENCE - NO CHAT HISTORY
         const STORAGE_KEY = 'hive_ai_intelligence';
 
@@ -777,32 +775,32 @@
             'nba basketball': 'basketball_nba',
             'nba games': 'basketball_nba',
             'basketball games': 'basketball_nba',
-            
+
             'nfl': 'americanfootball_nfl',
             'football': 'americanfootball_nfl',
             'nfl football': 'americanfootball_nfl',
             'nfl games': 'americanfootball_nfl',
             'football games': 'americanfootball_nfl',
-            
+
             'mlb': 'baseball_mlb',
             'baseball': 'baseball_mlb',
             'mlb baseball': 'baseball_mlb',
             'mlb games': 'baseball_mlb',
             'baseball games': 'baseball_mlb',
-            
+
             'nhl': 'icehockey_nhl',
             'hockey': 'icehockey_nhl',
             'nhl hockey': 'icehockey_nhl',
-            
+
             'ufc': 'mma_mixed_martial_arts',
             'mma': 'mma_mixed_martial_arts',
             'fighting': 'mma_mixed_martial_arts',
-            
+
             'soccer': 'soccer_usa_mls',
             'mls': 'soccer_usa_mls',
             'premier league': 'soccer_epl',
             'epl': 'soccer_epl',
-            
+
             'ncaaf': 'americanfootball_ncaaf',
             'college football': 'americanfootball_ncaaf',
             'ncaab': 'basketball_ncaab',
@@ -836,7 +834,7 @@
         };
 
         // ==================== ADVANCED INTELLIGENCE SYSTEM ====================
-        
+
         // AI Personality and Learning System
         let aiIntelligence = {
             // User Profile
@@ -847,7 +845,7 @@
                 sessionCount: 0,
                 avgQueriesPerSession: 0
             },
-            
+
             // Sports Preferences (learns over time)
             sportsPreferences: {
                 mostAskedSport: null,
@@ -856,7 +854,7 @@
                 bettingStyle: null, // 'analytical', 'quick', 'detailed', 'casual'
                 timeOfDayPatterns: {}
             },
-            
+
             // Conversation Style (adapts to user)
             conversationStyle: {
                 userFormality: 'neutral', // 'casual', 'neutral', 'formal'
@@ -866,7 +864,7 @@
                 preferredGreetings: [],
                 preferredFarewells: []
             },
-            
+
             // Query Patterns (learns what user asks)
             queryPatterns: {
                 commonQueryTypes: {}, // 'rank', 'predict', 'compare', etc.
@@ -874,7 +872,7 @@
                 complexityLevel: 'medium', // 'simple', 'medium', 'complex'
                 followUpRate: 0
             },
-            
+
             // Learning Metrics
             learningMetrics: {
                 totalLearningScore: 0,
@@ -882,7 +880,7 @@
                 personalizationLevel: 0,
                 lastLearningUpdate: null
             },
-            
+
             // Response Generation (improves over time)
             responseGeneration: {
                 vocabularyRichness: 1.0,
@@ -904,77 +902,88 @@
         let currentApi = 'primary';
         let apiFallbackUsed = false;
 
+        // Storage is not available in Poe iframe - intelligence is session-only
+
         // ==================== INITIALIZATION ====================
 
         function initialize() {
-            // Load AI intelligence from localStorage
+            // Load AI intelligence from localStorage (if available)
             loadIntelligence();
-            
+
             // Update session count
             aiIntelligence.userProfile.sessionCount++;
             aiIntelligence.userProfile.lastInteractionDate = new Date().toISOString();
-            
+
             if (!aiIntelligence.userProfile.firstInteractionDate) {
                 aiIntelligence.userProfile.firstInteractionDate = new Date().toISOString();
             }
-            
+
             // Update bot intelligence display
             updateIntelligenceDisplay();
-            
+
+            // Set up event listeners
+            const sendBtn = document.getElementById('sendBtn');
+            const messageInput = document.getElementById('messageInput');
+
+            // Add click event listener to send button
+            sendBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                sendMessage();
+            });
+
+            // Add keyboard event listener to textarea
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Add input event listener for auto-resize
+            messageInput.addEventListener('input', function() {
+                autoResize(this);
+            });
+
             // Focus input
-            document.getElementById('messageInput').focus();
-            
+            messageInput.focus();
+
             // Show personalized welcome based on learning
-            setTimeout(() => {
+            setTimeout(function() {
                 showPersonalizedWelcome();
             }, 500);
-            
+
             // Save intelligence
             saveIntelligence();
-            
-            // Add click event listener to send button
-            document.getElementById('sendBtn').addEventListener('click', sendMessage);
         }
 
         function loadIntelligence() {
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    aiIntelligence = JSON.parse(saved);
-                    console.log('Loaded AI intelligence:', aiIntelligence.userProfile.interactionCount, 'interactions');
-                }
-            } catch (error) {
-                console.log('Starting with fresh AI intelligence');
-            }
+            // Storage not available in Poe iframe - use session-only intelligence
         }
 
         function saveIntelligence() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(aiIntelligence));
-            } catch (error) {
-                console.error('Save intelligence error:', error);
-            }
+            // Storage not available in Poe iframe - intelligence is session-only
         }
 
         function updateIntelligenceDisplay() {
             const intelligenceSpan = document.getElementById('botIntelligence');
             if (!intelligenceSpan) return;
-            
+
             const interactions = aiIntelligence.userProfile.interactionCount;
             let level = 'New';
-            
+
             if (interactions > 50) level = 'Expert';
             else if (interactions > 20) level = 'Advanced';
             else if (interactions > 5) level = 'Learning';
-            
-            intelligenceSpan.textContent = `${level} • ${interactions} interactions`;
+
+            intelligenceSpan.textContent = level + ' • ' + interactions + ' interactions';
         }
 
         function showPersonalizedWelcome() {
-            if (document.getElementById('emptyState').style.display !== 'none') {
+            const emptyState = document.getElementById('emptyState');
+            if (emptyState && emptyState.style.display !== 'none') {
                 const interactions = aiIntelligence.userProfile.interactionCount;
                 let welcomeMessage = "";
-                
+
                 if (interactions === 0) {
                     welcomeMessage = "Hi! I'm Hive AI. I learn from our conversations to give you better sports analysis. Try asking: 'Rank tomorrow's NBA games by win %'";
                 } else if (interactions < 5) {
@@ -982,16 +991,16 @@
                 } else {
                     const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
                     const sportName = favSport ? getSportName(favSport) : "sports";
-                    
+
                     const greetings = [
-                        `Good to see you again! Ready to analyze some ${sportName}?`,
-                        `Welcome back! I've learned from our ${interactions} previous conversations.`,
-                        `Hey! Based on our history, I know you like ${sportName}. What shall we analyze today?`
+                        "Good to see you again! Ready to analyze some " + sportName + "?",
+                        "Welcome back! I've learned from our " + interactions + " previous conversations.",
+                        "Hey! Based on our history, I know you like " + sportName + ". What shall we analyze today?"
                     ];
-                    
+
                     welcomeMessage = greetings[Math.floor(Math.random() * greetings.length)];
                 }
-                
+
                 addMessage(welcomeMessage, false);
             }
         }
@@ -1002,18 +1011,11 @@
             if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                 textarea.style.fontSize = '16px';
             }
-            
+
             textarea.style.height = 'auto';
             textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-            
-            setTimeout(scrollToBottom, 100);
-        }
 
-        function handleKeyDown(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
+            setTimeout(scrollToBottom, 100);
         }
 
         function hideEmpty() {
@@ -1021,37 +1023,39 @@
             if (empty) empty.style.display = 'none';
         }
 
-        function addMessage(content, isUser = false, isHtml = false) {
+        function addMessage(content, isUser, isHtml) {
+            isUser = isUser || false;
+            isHtml = isHtml || false;
+
             hideEmpty();
             const wrapper = document.getElementById('messagesWrapper');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            messageDiv.className = 'message ' + (isUser ? 'user' : 'bot');
 
             const avatarContent = isUser
                 ? '<i class="fas fa-user"></i>'
-                : `<img src="${BOT_IMAGE}" alt="Bot">`;
+                : '<img src="' + BOT_IMAGE + '" alt="Bot">';
 
             const time = new Date();
             const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-            messageDiv.innerHTML = `
-                <div class="message-avatar">${avatarContent}</div>
-                <div class="message-bubble">
-                    <div class="message-content">
-                        ${isHtml ? content : `<p>${escapeHtml(content)}</p>`}
-                    </div>
-                    <div class="message-time">${timeStr}</div>
-                </div>
-            `;
+            messageDiv.innerHTML =
+                '<div class="message-avatar">' + avatarContent + '</div>' +
+                '<div class="message-bubble">' +
+                    '<div class="message-content">' +
+                        (isHtml ? content : '<p>' + escapeHtml(content) + '</p>') +
+                    '</div>' +
+                    '<div class="message-time">' + timeStr + '</div>' +
+                '</div>';
 
             wrapper.appendChild(messageDiv);
             scrollToBottom();
 
             // Add to current session only (cleared on refresh)
             currentSession.messages.push({
-                content,
-                isUser,
-                isHtml,
+                content: content,
+                isUser: isUser,
+                isHtml: isHtml,
                 timestamp: time.toISOString()
             });
 
@@ -1066,14 +1070,13 @@
             const indicator = document.createElement('div');
             indicator.className = 'message bot';
             indicator.id = 'typingIndicator';
-            indicator.innerHTML = `
-                <div class="message-avatar"><img src="${BOT_IMAGE}" alt="Bot"></div>
-                <div class="message-bubble">
-                    <div class="typing-indicator">
-                        <span></span><span></span><span></span>
-                    </div>
-                </div>
-            `;
+            indicator.innerHTML =
+                '<div class="message-avatar"><img src="' + BOT_IMAGE + '" alt="Bot"></div>' +
+                '<div class="message-bubble">' +
+                    '<div class="typing-indicator">' +
+                        '<span></span><span></span><span></span>' +
+                    '</div>' +
+                '</div>';
             wrapper.appendChild(indicator);
             scrollToBottom();
         }
@@ -1084,7 +1087,7 @@
         }
 
         function scrollToBottom() {
-            setTimeout(() => {
+            setTimeout(function() {
                 const container = document.getElementById('chatContainer');
                 container.scrollTop = container.scrollHeight;
             }, 100);
@@ -1096,12 +1099,17 @@
             return div.innerHTML;
         }
 
-        // ==================== SEND MESSAGE FUNCTION (FIXED) ====================
+        // ==================== SEND MESSAGE FUNCTION ====================
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
-            const message = input.value.trim();
             const sendBtn = document.getElementById('sendBtn');
+
+            if (!input || !sendBtn) {
+                return;
+            }
+
+            const message = input.value.trim();
 
             if (!message || isProcessing) {
                 return;
@@ -1109,20 +1117,20 @@
 
             isProcessing = true;
             sendBtn.disabled = true;
-            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Show loading spinner
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             // Add user message
             addMessage(message, true);
             input.value = '';
             input.style.height = 'auto';
-            
-            setTimeout(() => {
+
+            setTimeout(function() {
                 input.focus();
             }, 50);
 
             // LEARN FROM THIS INTERACTION
             learnFromUserMessage(message);
-            
+
             // Add typing indicator
             addTypingIndicator();
 
@@ -1130,20 +1138,19 @@
                 const response = await processMessageWithIntelligence(message);
                 removeTypingIndicator();
                 addMessage(response.text, false, response.isHtml);
-                
+
                 // LEARN FROM BOT'S RESPONSE
                 learnFromBotResponse(response);
-                
+
             } catch (error) {
                 removeTypingIndicator();
-                addMessage(`<div class="error-message"><i class="fas fa-exclamation-circle"></i> ${error.message}</div>`, false, true);
-                console.error('Error in sendMessage:', error);
+                addMessage('<div class="error-message"><i class="fas fa-exclamation-circle"></i> ' + (error.message || 'An error occurred') + '</div>', false, true);
             } finally {
                 // Always reset button state
                 isProcessing = false;
                 sendBtn.disabled = false;
-                sendBtn.innerHTML = '<i class="fas fa-arrow-up"></i>'; // Reset to arrow icon
-                
+                sendBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+
                 // Update intelligence display
                 updateIntelligenceDisplay();
             }
@@ -1153,68 +1160,69 @@
             // Update interaction counts
             aiIntelligence.userProfile.interactionCount++;
             currentSession.queryCount++;
-            
+
             const lowerMsg = message.toLowerCase();
             const hour = new Date().getHours();
             const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
-            
+
             // Learn sports preferences
-            for (const [keyword, sportKey] of Object.entries(SPORTS_MAP)) {
+            for (const keyword in SPORTS_MAP) {
                 if (lowerMsg.includes(keyword)) {
-                    aiIntelligence.sportsPreferences.sportFrequency[sportKey] = 
+                    const sportKey = SPORTS_MAP[keyword];
+                    aiIntelligence.sportsPreferences.sportFrequency[sportKey] =
                         (aiIntelligence.sportsPreferences.sportFrequency[sportKey] || 0) + 1;
-                    
+
                     // Update most asked sport
                     const currentMax = aiIntelligence.sportsPreferences.mostAskedSport;
                     const currentCount = currentMax ? aiIntelligence.sportsPreferences.sportFrequency[currentMax] || 0 : 0;
-                    
+
                     if (aiIntelligence.sportsPreferences.sportFrequency[sportKey] > currentCount) {
                         aiIntelligence.sportsPreferences.mostAskedSport = sportKey;
                     }
                 }
             }
-            
+
             // Learn query patterns
             const queryType = analyzeQueryType(message);
-            queryType.forEach(type => {
-                aiIntelligence.queryPatterns.commonQueryTypes[type] = 
+            queryType.forEach(function(type) {
+                aiIntelligence.queryPatterns.commonQueryTypes[type] =
                     (aiIntelligence.queryPatterns.commonQueryTypes[type] || 0) + 1;
             });
-            
+
             // Learn time patterns
-            aiIntelligence.sportsPreferences.timeOfDayPatterns[timeOfDay] = 
+            aiIntelligence.sportsPreferences.timeOfDayPatterns[timeOfDay] =
                 (aiIntelligence.sportsPreferences.timeOfDayPatterns[timeOfDay] || 0) + 1;
-            
+
             // Learn conversation style
             if (/(hi|hello|hey|good morning|good afternoon|good evening)/i.test(message)) {
-                if (!aiIntelligence.conversationStyle.preferredGreetings.includes(message.toLowerCase())) {
+                if (aiIntelligence.conversationStyle.preferredGreetings.indexOf(message.toLowerCase()) === -1) {
                     aiIntelligence.conversationStyle.preferredGreetings.push(message.toLowerCase());
                 }
             }
-            
+
             // Detect formality
             if (message.length < 10 && /^(hi|hey|sup|yo)/i.test(message)) {
                 aiIntelligence.conversationStyle.userFormality = 'casual';
             } else if (/(please|thank you|kindly|appreciate)/i.test(message)) {
                 aiIntelligence.conversationStyle.userFormality = 'formal';
             }
-            
+
             // Detect detail preference
             if (/(explain|detailed|break down|analyze)/i.test(message)) {
                 aiIntelligence.conversationStyle.userDetailPreference = 'detailed';
             } else if (/(quick|brief|short)/i.test(message)) {
                 aiIntelligence.conversationStyle.userDetailPreference = 'brief';
             }
-            
+
             // Detect emoji usage
-            if (/[😀-🙏🏀-🏈⚽-⚾🎯-🎰]/g.test(message)) {
+            if (/\p{Emoji}/u.test(message)) {
                 aiIntelligence.conversationStyle.usesEmojis = true;
             }
-            
+
             // Update learning metrics
-            aiIntelligence.learningMetrics.totalLearningScore = 
+            aiIntelligence.learningMetrics.totalLearningScore =
                 Math.min(100, aiIntelligence.userProfile.interactionCount * 0.5);
-            
+
             // Save intelligence
             saveIntelligence();
         }
@@ -1231,96 +1239,96 @@
                 } else {
                     aiIntelligence.conversationStyle.responseLength = 'long';
                 }
-                
+
                 // Add successful phrases to memory
-                if (response.text.includes('💎') || response.text.includes('🎯')) {
+                if (response.text.indexOf('💎') !== -1 || response.text.indexOf('🎯') !== -1) {
                     aiIntelligence.responseGeneration.personalizedPhrases.push('value_bet_emojis');
                 }
-                
-                if (response.text.includes('Based on our previous')) {
+
+                if (response.text.indexOf('Based on our previous') !== -1) {
                     aiIntelligence.responseGeneration.contextualMemory.push('contextual_reference');
                 }
-                
+
                 saveIntelligence();
             }
         }
 
         async function processMessageWithIntelligence(message) {
             const lowerMsg = message.toLowerCase();
-            
+
             // Generate personalized greeting if it's a greeting
             if (isGreeting(lowerMsg)) {
                 return generatePersonalizedGreeting();
             }
-            
+
             // Generate personalized thanks response
             if (isThanks(lowerMsg)) {
                 return generatePersonalizedThanks();
             }
-            
+
             // Generate personalized help
             if (isHelp(lowerMsg)) {
                 return generatePersonalizedHelp();
             }
-            
+
             // Analyze query type
             const queryType = analyzeQueryType(message);
-            
+
             // Detect sport
             let detectedSport = detectSportFromMessage(message);
-            
+
             // If no sport but we have learned preferences, suggest
             if (!detectedSport && aiIntelligence.sportsPreferences.mostAskedSport) {
                 detectedSport = aiIntelligence.sportsPreferences.mostAskedSport;
             }
-            
+
             // Handle complex queries with intelligence
-            if (queryType.includes('RANK') && detectedSport) {
+            if (queryType.indexOf('RANK') !== -1 && detectedSport) {
                 return await handleIntelligentRanking(message, detectedSport, queryType);
             }
-            
-            if (queryType.includes('PREDICTION') && detectedSport) {
+
+            if (queryType.indexOf('PREDICTION') !== -1 && detectedSport) {
                 return await handleIntelligentPrediction(message, detectedSport);
             }
-            
-            if (queryType.includes('COMPARE') && detectedSport) {
+
+            if (queryType.indexOf('COMPARE') !== -1 && detectedSport) {
                 return await handleIntelligentComparison(message, detectedSport);
             }
-            
-            if (queryType.includes('VALUE') && detectedSport) {
+
+            if (queryType.indexOf('VALUE') !== -1 && detectedSport) {
                 return await handleIntelligentValueBets(message, detectedSport);
             }
-            
+
             // Standard odds query with personalization
             if (detectedSport) {
                 try {
                     const odds = await fetchOdds(detectedSport);
                     if (odds.length === 0) {
-                        return { 
-                            text: generatePersonalizedNoGamesResponse(detectedSport), 
-                            isHtml: false 
+                        return {
+                            text: generatePersonalizedNoGamesResponse(detectedSport),
+                            isHtml: false
                         };
                     }
-                    
+
                     // Add personalized intro based on learned preferences
                     const personalizedIntro = generatePersonalizedSportIntro(detectedSport);
                     const oddsHtml = formatOddsResponse(odds, detectedSport);
-                    
+
                     return {
                         text: personalizedIntro + oddsHtml,
                         isHtml: true
                     };
-                    
+
                 } catch (error) {
                     throw new Error(generatePersonalizedErrorResponse());
                 }
             }
-            
+
             // Memory query with personalization
             if (/(what do you remember|my preferences|favorite)/i.test(lowerMsg)) {
                 return generateIntelligentMemoryResponse();
             }
-            
+
             // Fallback with learned context
             return generateIntelligentFallbackResponse();
         }
@@ -1332,27 +1340,27 @@
             const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
             const sportName = favSport ? getSportName(favSport) : "sports";
             const timeOfDay = new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening";
-            
+
             let greeting = "";
-            
+
             if (interactions === 0) {
                 greeting = "Hi there! I'm Hive AI, your sports analytics assistant. I'll learn from our conversations to give you better insights!";
             } else if (interactions < 3) {
-                greeting = `Good ${timeOfDay}! Back for more sports analysis?`;
+                greeting = "Good " + timeOfDay + "! Back for more sports analysis?";
             } else {
                 const greetings = [
-                    `Good ${timeOfDay}! Great to see you again. Ready to analyze some ${sportName}?`,
-                    `Hey! I was just thinking about our last ${sportName} conversation. What shall we dive into today?`,
-                    `Welcome back! I've been updating my algorithms based on our previous chats. What sport interests you?`
+                    "Good " + timeOfDay + "! Great to see you again. Ready to analyze some " + sportName + "?",
+                    "Hey! I was just thinking about our last " + sportName + " conversation. What shall we dive into today?",
+                    "Welcome back! I've been updating my algorithms based on our previous chats. What sport interests you?"
                 ];
                 greeting = greetings[Math.floor(Math.random() * greetings.length)];
             }
-            
+
             // Add emoji if user uses them
             if (aiIntelligence.conversationStyle.usesEmojis) {
                 greeting += " 🎯";
             }
-            
+
             return { text: greeting, isHtml: false };
         }
 
@@ -1363,36 +1371,35 @@
                 "No problem at all!",
                 "Glad I could assist!"
             ];
-            
+
             let response = responses[Math.floor(Math.random() * responses.length)];
-            
+
             // Add personal touch if we have history
             if (aiIntelligence.userProfile.interactionCount > 5) {
                 response += " Looking forward to our next analysis session!";
             }
-            
+
             if (aiIntelligence.conversationStyle.usesEmojis) {
                 response += " 👍";
             }
-            
+
             return { text: response, isHtml: false };
         }
 
         function generatePersonalizedHelp() {
             const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
             const sportExample = favSport ? getSportName(favSport) : "NBA";
-            
-            const helpText = `
-                <p>Based on ${aiIntelligence.userProfile.interactionCount} previous interactions, I've learned to understand:</p>
-                <ul style="margin-left: 20px; margin-top: 8px;">
-                    <li><strong>Rankings:</strong> "Rank tomorrow's ${sportExample} games by win %"</li>
-                    <li><strong>Predictions:</strong> "Show me ${sportExample} predictions"</li>
-                    <li><strong>Value Analysis:</strong> "What are the best value bets?"</li>
-                    <li><strong>Comparisons:</strong> "Compare team A vs team B"</li>
-                </ul>
-                <p style="margin-top: 12px;">The more we chat, the better I understand your preferences! 🚀</p>
-            `;
-            
+
+            const helpText =
+                '<p>Based on ' + aiIntelligence.userProfile.interactionCount + ' previous interactions, I\'ve learned to understand:</p>' +
+                '<ul style="margin-left: 20px; margin-top: 8px;">' +
+                    '<li><strong>Rankings:</strong> "Rank tomorrow\'s ' + sportExample + ' games by win %"</li>' +
+                    '<li><strong>Predictions:</strong> "Show me ' + sportExample + ' predictions"</li>' +
+                    '<li><strong>Value Analysis:</strong> "What are the best value bets?"</li>' +
+                    '<li><strong>Comparisons:</strong> "Compare team A vs team B"</li>' +
+                '</ul>' +
+                '<p style="margin-top: 12px;">The more we chat, the better I understand your preferences! 🚀</p>';
+
             return { text: helpText, isHtml: true };
         }
 
@@ -1400,43 +1407,43 @@
             const sportName = getSportName(sportKey);
             const isFavorite = aiIntelligence.sportsPreferences.mostAskedSport === sportKey;
             const interactionCount = aiIntelligence.userProfile.interactionCount;
-            
+
             let intro = "";
-            
+
             if (isFavorite && interactionCount > 3) {
                 const intros = [
-                    `<p><i class="fas fa-star"></i> <strong>Your favorite: ${sportName}</strong></p>`,
-                    `<p><i class="fas fa-brain"></i> <strong>${sportName} analysis</strong> (based on your preferences)</p>`,
-                    `<p><i class="fas fa-chart-line"></i> <strong>${sportName} insights</strong> tailored for you</p>`
+                    '<p><i class="fas fa-star"></i> <strong>Your favorite: ' + sportName + '</strong></p>',
+                    '<p><i class="fas fa-brain"></i> <strong>' + sportName + ' analysis</strong> (based on your preferences)</p>',
+                    '<p><i class="fas fa-chart-line"></i> <strong>' + sportName + ' insights</strong> tailored for you</p>'
                 ];
                 intro = intros[Math.floor(Math.random() * intros.length)];
             } else {
-                intro = `<p><i class="fas fa-${SPORT_ICONS[sportKey] || 'trophy'}"></i> <strong>${sportName} Odds</strong></p>`;
+                intro = '<p><i class="fas fa-' + (SPORT_ICONS[sportKey] || 'trophy') + '"></i> <strong>' + sportName + ' Odds</strong></p>';
             }
-            
+
             return intro;
         }
 
         function generatePersonalizedNoGamesResponse(sportKey) {
             const sportName = getSportName(sportKey);
             const altSport = getAlternativeSportSuggestion(sportKey);
-            
+
             if (aiIntelligence.userProfile.interactionCount > 5) {
-                return `No ${sportName} games found right now. Since you often ask about ${sportName}, maybe try ${altSport}?`;
+                return 'No ' + sportName + ' games found right now. Since you often ask about ' + sportName + ', maybe try ' + altSport + '?';
             }
-            
-            return `No ${sportName} games scheduled. Try ${altSport} or another sport?`;
+
+            return 'No ' + sportName + ' games scheduled. Try ' + altSport + ' or another sport?';
         }
 
         function generatePersonalizedErrorResponse() {
             if (apiFallbackUsed) {
                 return "Having trouble connecting to odds data. I'll keep trying in the background.";
             }
-            
+
             if (aiIntelligence.userProfile.interactionCount > 10) {
                 return "Temporary data issue. Based on our history, you might want to try again in a moment.";
             }
-            
+
             return "Couldn't fetch odds data. Please try again.";
         }
 
@@ -1444,50 +1451,54 @@
             const interactions = aiIntelligence.userProfile.interactionCount;
             const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
             const sportName = favSport ? getSportName(favSport) : "various sports";
-            const topSports = Object.entries(aiIntelligence.sportsPreferences.sportFrequency)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .map(([sport, count]) => `${getSportName(sport)} (${count}x)`)
-                .join(', ');
-            
-            let response = `
-                <div class="info-message">
-                    <i class="fas fa-brain"></i> <strong>My Learning Progress</strong>
-                </div>
-                <p>After ${interactions} conversations, I've learned:</p>
-                <ul style="margin-left: 20px; margin-top: 8px;">
-                    <li>You mostly ask about: <strong>${topSports}</strong></li>
-                    <li>Your preferred style: <strong>${aiIntelligence.conversationStyle.userDetailPreference}</strong> responses</li>
-                    <li>Learning score: <strong>${Math.round(aiIntelligence.learningMetrics.totalLearningScore)}/100</strong></li>
-                </ul>
-            `;
-            
-            if (interactions > 20) {
-                response += `<p style="margin-top: 12px; color: var(--accent);"><i class="fas fa-rocket"></i> Expert level unlocked! I now anticipate your ${sportName} queries.</p>`;
+
+            const sportFreqEntries = [];
+            for (const sport in aiIntelligence.sportsPreferences.sportFrequency) {
+                sportFreqEntries.push([sport, aiIntelligence.sportsPreferences.sportFrequency[sport]]);
             }
-            
+            sportFreqEntries.sort(function(a, b) { return b[1] - a[1]; });
+
+            const topSports = sportFreqEntries.slice(0, 3).map(function(entry) {
+                return getSportName(entry[0]) + ' (' + entry[1] + 'x)';
+            }).join(', ');
+
+            let response =
+                '<div class="info-message">' +
+                    '<i class="fas fa-brain"></i> <strong>My Learning Progress</strong>' +
+                '</div>' +
+                '<p>After ' + interactions + ' conversations, I\'ve learned:</p>' +
+                '<ul style="margin-left: 20px; margin-top: 8px;">' +
+                    '<li>You mostly ask about: <strong>' + (topSports || 'various sports') + '</strong></li>' +
+                    '<li>Your preferred style: <strong>' + aiIntelligence.conversationStyle.userDetailPreference + '</strong> responses</li>' +
+                    '<li>Learning score: <strong>' + Math.round(aiIntelligence.learningMetrics.totalLearningScore) + '/100</strong></li>' +
+                '</ul>';
+
+            if (interactions > 20) {
+                response += '<p style="margin-top: 12px; color: var(--accent);"><i class="fas fa-rocket"></i> Expert level unlocked! I now anticipate your ' + sportName + ' queries.</p>';
+            }
+
             return { text: response, isHtml: true };
         }
 
         function generateIntelligentFallbackResponse() {
             const interactions = aiIntelligence.userProfile.interactionCount;
             const favSport = aiIntelligence.sportsPreferences.mostAskedSport;
-            
+
             let suggestion = "";
             if (favSport && interactions > 3) {
                 const sportName = getSportName(favSport);
-                suggestion = ` Since you often ask about ${sportName}, try: "Rank ${sportName} games by win %"`;
+                suggestion = ' Since you often ask about ' + sportName + ', try: "Rank ' + sportName + ' games by win %"';
             }
-            
+
             const responses = [
-                `I specialize in sports analytics. Try asking about odds, rankings, or predictions.${suggestion}`,
-                `Sports analysis is my game! Ask me to rank games, predict winners, or find value bets.${suggestion}`,
-                `Let's analyze some sports data! You can ask for rankings, predictions, or team comparisons.${suggestion}`
+                'I specialize in sports analytics. Try asking about odds, rankings, or predictions.' + suggestion,
+                'Sports analysis is my game! Ask me to rank games, predict winners, or find value bets.' + suggestion,
+                'Let\'s analyze some sports data! You can ask for rankings, predictions, or team comparisons.' + suggestion
             ];
-            
-            return { 
-                text: responses[Math.floor(Math.random() * responses.length)], 
-                isHtml: false 
+
+            return {
+                text: responses[Math.floor(Math.random() * responses.length)],
+                isHtml: false
             };
         }
 
@@ -1497,46 +1508,46 @@
             try {
                 const odds = await fetchOdds(sport);
                 if (odds.length === 0) {
-                    return { 
-                        text: generatePersonalizedNoGamesResponse(sport), 
-                        isHtml: false 
+                    return {
+                        text: generatePersonalizedNoGamesResponse(sport),
+                        isHtml: false
                     };
                 }
-                
+
                 const gamesWithProbabilities = calculateWinProbabilities(odds);
-                
+
                 // Sort based on query type
                 let sortedGames;
-                if (queryType.includes('WIN_PERCENT')) {
-                    sortedGames = gamesWithProbabilities.sort((a, b) => b.winProbability - a.winProbability);
+                if (queryType.indexOf('WIN_PERCENT') !== -1) {
+                    sortedGames = gamesWithProbabilities.sort(function(a, b) { return b.winProbability - a.winProbability; });
                 } else {
-                    sortedGames = gamesWithProbabilities.sort((a, b) => a.avgOdds - b.avgOdds);
+                    sortedGames = gamesWithProbabilities.sort(function(a, b) { return a.avgOdds - b.avgOdds; });
                 }
-                
+
                 // Limit based on learned preference
                 const topMatch = message.match(/top (\d+)/i);
                 let limit = topMatch ? parseInt(topMatch[1]) : 5;
-                
+
                 // Adjust based on user's detail preference
                 if (aiIntelligence.conversationStyle.userDetailPreference === 'brief') {
                     limit = Math.min(limit, 3);
                 } else if (aiIntelligence.conversationStyle.userDetailPreference === 'detailed') {
                     limit = Math.min(limit, 10);
                 }
-                
+
                 const displayGames = sortedGames.slice(0, limit);
-                
+
                 // Add personalized context
-                const personalContext = aiIntelligence.userProfile.interactionCount > 10 ? 
-                    `<div class="info-message">
-                        <i class="fas fa-lightbulb"></i> Ranked based on your preference for ${aiIntelligence.conversationStyle.userDetailPreference} analysis
-                    </div>` : '';
-                
-                return { 
-                    text: personalContext + generateRankingTable(displayGames, sport, queryType), 
-                    isHtml: true 
+                const personalContext = aiIntelligence.userProfile.interactionCount > 10 ?
+                    '<div class="info-message">' +
+                        '<i class="fas fa-lightbulb"></i> Ranked based on your preference for ' + aiIntelligence.conversationStyle.userDetailPreference + ' analysis' +
+                    '</div>' : '';
+
+                return {
+                    text: personalContext + generateRankingTable(displayGames, sport, queryType),
+                    isHtml: true
                 };
-                
+
             } catch (error) {
                 throw new Error(generatePersonalizedErrorResponse());
             }
@@ -1546,70 +1557,72 @@
             try {
                 const odds = await fetchOdds(sport);
                 if (odds.length === 0) {
-                    return { 
-                        text: generatePersonalizedNoGamesResponse(sport), 
-                        isHtml: false 
+                    return {
+                        text: generatePersonalizedNoGamesResponse(sport),
+                        isHtml: false
                     };
                 }
-                
+
                 const predictions = calculateWinProbabilities(odds)
-                    .map(game => {
-                        const favorite = game.homeWinProbability > game.awayWinProbability ? 
-                            `${game.homeTeam} (${Math.round(game.homeWinProbability)}%)` : 
-                            `${game.awayTeam} (${Math.round(game.awayWinProbability)}%)`;
-                        
+                    .map(function(game) {
+                        const favorite = game.homeWinProbability > game.awayWinProbability ?
+                            game.homeTeam + ' (' + Math.round(game.homeWinProbability) + '%)' :
+                            game.awayTeam + ' (' + Math.round(game.awayWinProbability) + '%)';
+
                         return {
-                            ...game,
+                            homeTeam: game.homeTeam,
+                            awayTeam: game.awayTeam,
+                            homeWinProbability: game.homeWinProbability,
+                            awayWinProbability: game.awayWinProbability,
                             prediction: favorite,
                             confidence: Math.max(game.homeWinProbability, game.awayWinProbability)
                         };
                     })
-                    .sort((a, b) => b.confidence - a.confidence)
-                    .slice(0, 5); // Show top 5 predictions
-                
-                return { 
-                    text: generatePredictionsTable(predictions, sport), 
-                    isHtml: true 
+                    .sort(function(a, b) { return b.confidence - a.confidence; })
+                    .slice(0, 5);
+
+                return {
+                    text: generatePredictionsTable(predictions, sport),
+                    isHtml: true
                 };
-                
+
             } catch (error) {
                 throw new Error(generatePersonalizedErrorResponse());
             }
         }
 
         async function handleIntelligentComparison(message, sport) {
-            // Similar to previous but with personalized touches
             const teamRegex = /(?:compare|versus|vs|matchup|head to head)\s+(.+?)\s+(?:and|vs|versus)\s+(.+)/i;
             const match = message.match(teamRegex);
-            
+
             if (!match) {
-                return { 
-                    text: "Please specify teams to compare. Example: 'Compare Lakers vs Warriors'", 
-                    isHtml: false 
+                return {
+                    text: "Please specify teams to compare. Example: 'Compare Lakers vs Warriors'",
+                    isHtml: false
                 };
             }
-            
+
             try {
                 const odds = await fetchOdds(sport);
-                const game = odds.find(g => 
-                    g.home_team.toLowerCase().includes(match[1].toLowerCase()) || 
-                    g.away_team.toLowerCase().includes(match[1].toLowerCase()) ||
-                    g.home_team.toLowerCase().includes(match[2].toLowerCase()) || 
-                    g.away_team.toLowerCase().includes(match[2].toLowerCase())
-                );
-                
+                const game = odds.find(function(g) {
+                    return g.home_team.toLowerCase().indexOf(match[1].toLowerCase()) !== -1 ||
+                        g.away_team.toLowerCase().indexOf(match[1].toLowerCase()) !== -1 ||
+                        g.home_team.toLowerCase().indexOf(match[2].toLowerCase()) !== -1 ||
+                        g.away_team.toLowerCase().indexOf(match[2].toLowerCase()) !== -1;
+                });
+
                 if (!game) {
-                    return { 
-                        text: `Couldn't find a matchup between ${match[1]} and ${match[2]}.`, 
-                        isHtml: false 
+                    return {
+                        text: 'Couldn\'t find a matchup between ' + match[1] + ' and ' + match[2] + '.',
+                        isHtml: false
                     };
                 }
-                
-                return { 
-                    text: generateComparisonTable(game, match[1], match[2]), 
-                    isHtml: true 
+
+                return {
+                    text: generateComparisonTable(game, match[1], match[2]),
+                    isHtml: true
                 };
-                
+
             } catch (error) {
                 throw new Error(generatePersonalizedErrorResponse());
             }
@@ -1619,25 +1632,25 @@
             try {
                 const odds = await fetchOdds(sport);
                 if (odds.length === 0) {
-                    return { 
-                        text: generatePersonalizedNoGamesResponse(sport), 
-                        isHtml: false 
+                    return {
+                        text: generatePersonalizedNoGamesResponse(sport),
+                        isHtml: false
                     };
                 }
-                
+
                 const valueBets = findValueBets(odds);
-                
+
                 // Add personalized note about value betting
-                const personalNote = aiIntelligence.userProfile.interactionCount > 15 ? 
-                    `<div class="info-message">
-                        <i class="fas fa-gem"></i> Based on our history, you seem interested in value bets. Here are today's best opportunities:
-                    </div>` : '';
-                
-                return { 
-                    text: personalNote + generateValueBetsTable(valueBets.slice(0, 5), sport), 
-                    isHtml: true 
+                const personalNote = aiIntelligence.userProfile.interactionCount > 15 ?
+                    '<div class="info-message">' +
+                        '<i class="fas fa-gem"></i> Based on our history, you seem interested in value bets. Here are today\'s best opportunities:' +
+                    '</div>' : '';
+
+                return {
+                    text: personalNote + generateValueBetsTable(valueBets.slice(0, 5), sport),
+                    isHtml: true
                 };
-                
+
             } catch (error) {
                 throw new Error(generatePersonalizedErrorResponse());
             }
@@ -1647,21 +1660,21 @@
 
         function analyzeQueryType(message) {
             const types = [];
-            
-            for (const [pattern, regex] of Object.entries(QUERY_PATTERNS)) {
-                if (regex.test(message)) {
+
+            for (const pattern in QUERY_PATTERNS) {
+                if (QUERY_PATTERNS[pattern].test(message)) {
                     types.push(pattern);
                 }
             }
-            
+
             return types.length > 0 ? types : ['STANDARD'];
         }
 
         function detectSportFromMessage(message) {
             const lowerMsg = message.toLowerCase();
-            for (const [keyword, sportKey] of Object.entries(SPORTS_MAP)) {
-                if (lowerMsg.includes(keyword)) {
-                    return sportKey;
+            for (const keyword in SPORTS_MAP) {
+                if (lowerMsg.indexOf(keyword) !== -1) {
+                    return SPORTS_MAP[keyword];
                 }
             }
             return null;
@@ -1670,7 +1683,7 @@
         function getAlternativeSportSuggestion(currentSport) {
             const sports = ['basketball_nba', 'americanfootball_nfl', 'baseball_mlb'];
             const currentIndex = sports.indexOf(currentSport);
-            return currentIndex >= 0 && currentIndex < sports.length - 1 ? 
+            return currentIndex >= 0 && currentIndex < sports.length - 1 ?
                 getSportName(sports[currentIndex + 1]) : getSportName(sports[0]);
         }
 
@@ -1711,7 +1724,6 @@
                 return data;
             } catch (error) {
                 // Silently switch to backup
-                console.log('Switching to backup API...');
                 apiFallbackUsed = true;
                 currentApi = 'backup';
                 return await fetchWithApi(API_KEYS.backup, sport);
@@ -1719,58 +1731,61 @@
         }
 
         async function fetchWithApi(apiKey, sport) {
-            const url = `${API_BASE}/sports/${sport}/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads&oddsFormat=american`;
-            
+            const url = API_BASE + '/sports/' + sport + '/odds/?apiKey=' + apiKey + '&regions=us&markets=h2h,spreads&oddsFormat=american';
+
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error('API request failed');
             }
-            
+
             const data = await response.json();
             return data.slice(0, 10);
         }
 
         function calculateWinProbabilities(games) {
-            return games.map(game => {
+            return games.map(function(game) {
                 let homeWinProbability = 50;
                 let awayWinProbability = 50;
                 let avgOdds = 0;
-                
-                if (game.bookmakers?.[0]?.markets?.[0]?.outcomes) {
+
+                if (game.bookmakers && game.bookmakers[0] && game.bookmakers[0].markets && game.bookmakers[0].markets[0] && game.bookmakers[0].markets[0].outcomes) {
                     const outcomes = game.bookmakers[0].markets[0].outcomes;
-                    
-                    outcomes.forEach(outcome => {
+
+                    outcomes.forEach(function(outcome) {
                         const odds = outcome.price;
                         let probability;
-                        
+
                         if (odds > 0) {
                             probability = 100 / (odds + 100);
                         } else {
                             probability = Math.abs(odds) / (Math.abs(odds) + 100);
                         }
-                        
+
                         if (outcome.name === game.home_team) {
                             homeWinProbability = probability * 100;
                         } else {
                             awayWinProbability = probability * 100;
                         }
-                        
+
                         avgOdds += Math.abs(odds);
                     });
-                    
+
                     avgOdds /= outcomes.length;
                 }
-                
+
                 const winProbability = Math.max(homeWinProbability, awayWinProbability);
-                
+
                 return {
-                    ...game,
+                    home_team: game.home_team,
+                    away_team: game.away_team,
+                    commence_time: game.commence_time,
+                    bookmakers: game.bookmakers,
                     homeTeam: game.home_team,
                     awayTeam: game.away_team,
-                    homeWinProbability,
-                    awayWinProbability,
-                    winProbability,
-                    avgOdds,
+                    homeWinProbability: homeWinProbability,
+                    awayWinProbability: awayWinProbability,
+                    winProbability: winProbability,
+                    avgOdds: avgOdds,
                     favorite: homeWinProbability > awayWinProbability ? game.home_team : game.away_team,
                     bestBet: determineBestBet(homeWinProbability, awayWinProbability)
                 };
@@ -1779,188 +1794,180 @@
 
         function determineBestBet(homeProb, awayProb) {
             const edge = Math.abs(homeProb - awayProb);
-            
+
             if (edge > 15) return "Big Favorite";
             if (edge > 8) return "Moderate Favorite";
             if (edge < 3) return "Close Game";
-            
+
             return "Watch";
         }
 
         function findValueBets(games) {
             return calculateWinProbabilities(games)
-                .map(game => {
+                .map(function(game) {
                     const valueScore = Math.abs(game.homeWinProbability - game.awayWinProbability) / 10;
                     return {
-                        ...game,
-                        valueScore,
+                        homeTeam: game.homeTeam,
+                        awayTeam: game.awayTeam,
+                        homeWinProbability: game.homeWinProbability,
+                        awayWinProbability: game.awayWinProbability,
+                        winProbability: game.winProbability,
+                        favorite: game.favorite,
+                        valueScore: valueScore,
                         isValueBet: valueScore > 1.2
                     };
                 })
-                .filter(game => game.isValueBet)
-                .sort((a, b) => b.valueScore - a.valueScore);
+                .filter(function(game) { return game.isValueBet; })
+                .sort(function(a, b) { return b.valueScore - a.valueScore; });
         }
 
-        // ==================== TABLE GENERATORS (No API messages) ====================
+        // ==================== TABLE GENERATORS ====================
 
         function generateRankingTable(games, sport, queryType) {
             const sportName = getSportName(sport);
-            const title = queryType.includes('WIN_PERCENT') ? 
-                `Top ${games.length} ${sportName} Games by Win Probability` :
-                `Top ${games.length} ${sportName} Games`;
-            
-            let html = `
-                <div class="ranking-table">
-                    <div class="ranking-header">
-                        <div>Rank</div>
-                        <div>Matchup</div>
-                        <div>Win %</div>
-                        <div>Best Bet</div>
-                    </div>
-            `;
-            
-            games.forEach((game, index) => {
+
+            let html =
+                '<div class="ranking-table">' +
+                    '<div class="ranking-header">' +
+                        '<div>Rank</div>' +
+                        '<div>Matchup</div>' +
+                        '<div>Win %</div>' +
+                        '<div>Best Bet</div>' +
+                    '</div>';
+
+            games.forEach(function(game, index) {
                 const probability = Math.max(game.homeWinProbability, game.awayWinProbability);
-                const probabilityClass = probability >= 65 ? 'high-probability' : 
+                const probabilityClass = probability >= 65 ? 'high-probability' :
                                         probability >= 55 ? 'medium-probability' : 'low-probability';
-                
-                html += `
-                    <div class="ranking-row">
-                        <div class="rank-number">#${index + 1}</div>
-                        <div class="rank-team">
-                            <div class="team-name">${game.homeTeam}</div>
-                            <div class="team-matchup">vs ${game.awayTeam}</div>
-                            <div class="probability-bar">
-                                <div class="probability-fill ${probabilityClass}" style="width: ${probability}%"></div>
-                            </div>
-                        </div>
-                        <div class="win-percentage">${Math.round(probability)}%</div>
-                        <div class="best-bet">${game.bestBet}</div>
-                    </div>
-                `;
+
+                html +=
+                    '<div class="ranking-row">' +
+                        '<div class="rank-number">#' + (index + 1) + '</div>' +
+                        '<div class="rank-team">' +
+                            '<div class="team-name">' + game.homeTeam + '</div>' +
+                            '<div class="team-matchup">vs ' + game.awayTeam + '</div>' +
+                            '<div class="probability-bar">' +
+                                '<div class="probability-fill ' + probabilityClass + '" style="width: ' + probability + '%"></div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="win-percentage">' + Math.round(probability) + '%</div>' +
+                        '<div class="best-bet">' + game.bestBet + '</div>' +
+                    '</div>';
             });
-            
-            html += `</div>`;
-            
+
+            html += '</div>';
+
             return html;
         }
 
         function generatePredictionsTable(predictions, sport) {
             const sportName = getSportName(sport);
-            
-            let html = `
-                <p><i class="fas fa-crystal-ball"></i> <strong>${sportName} Predictions</strong></p>
-                <div class="ranking-table">
-                    <div class="ranking-header">
-                        <div>#</div>
-                        <div>Prediction</div>
-                        <div>Confidence</div>
-                        <div>Edge</div>
-                    </div>
-            `;
-            
-            predictions.forEach((pred, index) => {
+
+            let html =
+                '<p><i class="fas fa-crystal-ball"></i> <strong>' + sportName + ' Predictions</strong></p>' +
+                '<div class="ranking-table">' +
+                    '<div class="ranking-header">' +
+                        '<div>#</div>' +
+                        '<div>Prediction</div>' +
+                        '<div>Confidence</div>' +
+                        '<div>Edge</div>' +
+                    '</div>';
+
+            predictions.forEach(function(pred, index) {
                 const edge = Math.abs(pred.homeWinProbability - pred.awayWinProbability);
                 const edgeText = edge >= 10 ? 'High' : edge >= 5 ? 'Medium' : 'Low';
-                
-                html += `
-                    <div class="ranking-row">
-                        <div class="rank-number">${index + 1}</div>
-                        <div class="rank-team">
-                            <div class="team-name">${pred.prediction}</div>
-                            <div class="team-matchup">${pred.homeTeam} vs ${pred.awayTeam}</div>
-                        </div>
-                        <div class="win-percentage">${Math.round(pred.confidence)}%</div>
-                        <div class="best-bet">${edgeText}</div>
-                    </div>
-                `;
+
+                html +=
+                    '<div class="ranking-row">' +
+                        '<div class="rank-number">' + (index + 1) + '</div>' +
+                        '<div class="rank-team">' +
+                            '<div class="team-name">' + pred.prediction + '</div>' +
+                            '<div class="team-matchup">' + pred.homeTeam + ' vs ' + pred.awayTeam + '</div>' +
+                        '</div>' +
+                        '<div class="win-percentage">' + Math.round(pred.confidence) + '%</div>' +
+                        '<div class="best-bet">' + edgeText + '</div>' +
+                    '</div>';
             });
-            
-            html += `</div>`;
-            
+
+            html += '</div>';
+
             return html;
         }
 
         function generateComparisonTable(game, team1, team2) {
             const probabilities = calculateWinProbabilities([game])[0];
-            const homeIsTeam1 = game.home_team.toLowerCase().includes(team1.toLowerCase());
+            const homeIsTeam1 = game.home_team.toLowerCase().indexOf(team1.toLowerCase()) !== -1;
             const team1Prob = homeIsTeam1 ? probabilities.homeWinProbability : probabilities.awayWinProbability;
             const team2Prob = homeIsTeam1 ? probabilities.awayWinProbability : probabilities.homeWinProbability;
-            
-            return `
-                <div class="odds-card">
-                    <div class="odds-header">
-                        <div class="odds-sport"><i class="fas fa-balance-scale"></i> Matchup Analysis</div>
-                        <div class="odds-time">Head-to-Head</div>
-                    </div>
-                    <div class="odds-matchup" style="text-align: center; font-size: 16px;">
-                        ${team1} vs ${team2}
-                    </div>
-                    <div class="odds-grid" style="grid-template-columns: 1fr 1fr;">
-                        <div class="odds-item">
-                            <div class="odds-label">${team1} Win %</div>
-                            <div class="odds-value">${Math.round(team1Prob)}%</div>
-                            <div class="probability-bar">
-                                <div class="probability-fill ${team1Prob >= 50 ? 'high-probability' : 'low-probability'}" 
-                                     style="width: ${team1Prob}%"></div>
-                            </div>
-                        </div>
-                        <div class="odds-item">
-                            <div class="odds-label">${team2} Win %</div>
-                            <div class="odds-value">${Math.round(team2Prob)}%</div>
-                            <div class="probability-bar">
-                                <div class="probability-fill ${team2Prob >= 50 ? 'high-probability' : 'low-probability'}" 
-                                     style="width: ${team2Prob}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 16px; text-align: center; color: var(--accent); font-size: 12px;">
-                        <i class="fas fa-lightbulb"></i> ${team1Prob > team2Prob ? team1 : team2} is favored by ${Math.abs(Math.round(team1Prob - team2Prob))}%
-                    </div>
-                </div>
-            `;
+
+            return '<div class="odds-card">' +
+                    '<div class="odds-header">' +
+                        '<div class="odds-sport"><i class="fas fa-balance-scale"></i> Matchup Analysis</div>' +
+                        '<div class="odds-time">Head-to-Head</div>' +
+                    '</div>' +
+                    '<div class="odds-matchup" style="text-align: center; font-size: 16px;">' +
+                        team1 + ' vs ' + team2 +
+                    '</div>' +
+                    '<div class="odds-grid" style="grid-template-columns: 1fr 1fr;">' +
+                        '<div class="odds-item">' +
+                            '<div class="odds-label">' + team1 + ' Win %</div>' +
+                            '<div class="odds-value">' + Math.round(team1Prob) + '%</div>' +
+                            '<div class="probability-bar">' +
+                                '<div class="probability-fill ' + (team1Prob >= 50 ? 'high-probability' : 'low-probability') + '" style="width: ' + team1Prob + '%"></div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="odds-item">' +
+                            '<div class="odds-label">' + team2 + ' Win %</div>' +
+                            '<div class="odds-value">' + Math.round(team2Prob) + '%</div>' +
+                            '<div class="probability-bar">' +
+                                '<div class="probability-fill ' + (team2Prob >= 50 ? 'high-probability' : 'low-probability') + '" style="width: ' + team2Prob + '%"></div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="margin-top: 16px; text-align: center; color: var(--accent); font-size: 12px;">' +
+                        '<i class="fas fa-lightbulb"></i> ' + (team1Prob > team2Prob ? team1 : team2) + ' is favored by ' + Math.abs(Math.round(team1Prob - team2Prob)) + '%' +
+                    '</div>' +
+                '</div>';
         }
 
         function generateValueBetsTable(valueBets, sport) {
             const sportName = getSportName(sport);
-            
+
             if (valueBets.length === 0) {
-                return `<div class="info-message">
-                    <i class="fas fa-search"></i> No strong value bets found in ${sportName} right now.
-                </div>`;
+                return '<div class="info-message">' +
+                    '<i class="fas fa-search"></i> No strong value bets found in ' + sportName + ' right now.' +
+                '</div>';
             }
-            
-            let html = `
-                <p><i class="fas fa-gem"></i> <strong>${sportName} Value Bets</strong></p>
-                <div class="ranking-table">
-                    <div class="ranking-header">
-                        <div>#</div>
-                        <div>Game</div>
-                        <div>Value</div>
-                        <div>Play</div>
-                    </div>
-            `;
-            
-            valueBets.forEach((bet, index) => {
+
+            let html =
+                '<p><i class="fas fa-gem"></i> <strong>' + sportName + ' Value Bets</strong></p>' +
+                '<div class="ranking-table">' +
+                    '<div class="ranking-header">' +
+                        '<div>#</div>' +
+                        '<div>Game</div>' +
+                        '<div>Value</div>' +
+                        '<div>Play</div>' +
+                    '</div>';
+
+            valueBets.forEach(function(bet, index) {
                 const valueScore = bet.valueScore.toFixed(1);
-                
-                html += `
-                    <div class="ranking-row">
-                        <div class="rank-number">${index + 1}</div>
-                        <div class="rank-team">
-                            <div class="team-name">${bet.homeTeam} vs ${bet.awayTeam}</div>
-                            <div class="team-matchup">Fav: ${bet.favorite} (${Math.round(bet.winProbability)}%)</div>
-                        </div>
-                        <div class="win-percentage">${valueScore}x</div>
-                        <div class="best-bet" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">
-                            <i class="fas fa-check-circle"></i> Value
-                        </div>
-                    </div>
-                `;
+
+                html +=
+                    '<div class="ranking-row">' +
+                        '<div class="rank-number">' + (index + 1) + '</div>' +
+                        '<div class="rank-team">' +
+                            '<div class="team-name">' + bet.homeTeam + ' vs ' + bet.awayTeam + '</div>' +
+                            '<div class="team-matchup">Fav: ' + bet.favorite + ' (' + Math.round(bet.winProbability) + '%)</div>' +
+                        '</div>' +
+                        '<div class="win-percentage">' + valueScore + 'x</div>' +
+                        '<div class="best-bet" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">' +
+                            '<i class="fas fa-check-circle"></i> Value' +
+                        '</div>' +
+                    '</div>';
             });
-            
-            html += `</div>`;
-            
+
+            html += '</div>';
+
             return html;
         }
 
@@ -1968,48 +1975,48 @@
             const sportName = getSportName(sport);
             const icon = SPORT_ICONS[sport] || 'trophy';
 
-            let html = `<p><i class="fas fa-${icon}"></i> <strong>${sportName} Odds</strong></p>`;
+            let html = '<p><i class="fas fa-' + icon + '"></i> <strong>' + sportName + ' Odds</strong></p>';
 
-            games.forEach(game => {
+            games.forEach(function(game) {
                 const gameTime = new Date(game.commence_time);
                 const timeStr = gameTime.toLocaleString('en-US', {
                     weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
                 });
 
-                html += `<div class="odds-card">
-                    <div class="odds-header">
-                        <div class="odds-sport"><i class="fas fa-${icon}"></i> ${sportName}</div>
-                        <div class="odds-time">${timeStr}</div>
-                    </div>
-                    <div class="odds-matchup">${game.away_team} @ ${game.home_team}</div>
-                    <div class="odds-grid">`;
+                html += '<div class="odds-card">' +
+                    '<div class="odds-header">' +
+                        '<div class="odds-sport"><i class="fas fa-' + icon + '"></i> ' + sportName + '</div>' +
+                        '<div class="odds-time">' + timeStr + '</div>' +
+                    '</div>' +
+                    '<div class="odds-matchup">' + game.away_team + ' @ ' + game.home_team + '</div>' +
+                    '<div class="odds-grid">';
 
-                if (game.bookmakers?.length > 0) {
+                if (game.bookmakers && game.bookmakers.length > 0) {
                     const bookmaker = game.bookmakers[0];
-                    const h2hMarket = bookmaker.markets.find(m => m.key === 'h2h');
+                    const h2hMarket = bookmaker.markets.find(function(m) { return m.key === 'h2h'; });
                     if (h2hMarket) {
-                        h2hMarket.outcomes.forEach(outcome => {
-                            const odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
-                            html += `<div class="odds-item">
-                                <div class="odds-label">ML</div>
-                                <div class="odds-value">${odds}</div>
-                                <div class="odds-team">${outcome.name}</div>
-                            </div>`;
+                        h2hMarket.outcomes.forEach(function(outcome) {
+                            const odds = outcome.price > 0 ? '+' + outcome.price : outcome.price;
+                            html += '<div class="odds-item">' +
+                                '<div class="odds-label">ML</div>' +
+                                '<div class="odds-value">' + odds + '</div>' +
+                                '<div class="odds-team">' + outcome.name + '</div>' +
+                            '</div>';
                         });
                     }
-                    const spreadsMarket = bookmaker.markets.find(m => m.key === 'spreads');
+                    const spreadsMarket = bookmaker.markets.find(function(m) { return m.key === 'spreads'; });
                     if (spreadsMarket) {
-                        spreadsMarket.outcomes.forEach(outcome => {
-                            const spread = outcome.point > 0 ? `+${outcome.point}` : outcome.point;
-                            html += `<div class="odds-item">
-                                <div class="odds-label">Spread</div>
-                                <div class="odds-value">${spread}</div>
-                                <div class="odds-team">${outcome.name}</div>
-                            </div>`;
+                        spreadsMarket.outcomes.forEach(function(outcome) {
+                            const spread = outcome.point > 0 ? '+' + outcome.point : outcome.point;
+                            html += '<div class="odds-item">' +
+                                '<div class="odds-label">Spread</div>' +
+                                '<div class="odds-value">' + spread + '</div>' +
+                                '<div class="odds-team">' + outcome.name + '</div>' +
+                            '</div>';
                         });
                     }
                 }
-                html += `</div></div>`;
+                html += '</div></div>';
             });
 
             return html;
@@ -2018,13 +2025,6 @@
         // ==================== INITIALIZE ====================
 
         document.addEventListener('DOMContentLoaded', initialize);
-        
-        // Prevent zoom on input focus
-        document.addEventListener('touchstart', function(e) {
-            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
-                // Prevent default zoom behavior
-            }
-        }, { passive: true });
     </script>
 </body>
 </html>
